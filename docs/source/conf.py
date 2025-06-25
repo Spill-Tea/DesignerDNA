@@ -10,9 +10,9 @@ import sys
 
 
 sys.path.insert(0, os.path.abspath("../src/"))
+sys.path.append(os.path.abspath("./_ext"))  # Required for custom extensions
 
-
-project = "PyTemplate"
+project = "DesignerDNA"
 copyright = "2025, Jason C Del Rio (Spill-Tea)"
 author = "Jason C Del Rio (Spill-Tea)"
 release = "v0.0.1"
@@ -38,3 +38,4 @@ exclude_patterns = []
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
+pygments_style = "styles.VSCodeDarkPlus"
