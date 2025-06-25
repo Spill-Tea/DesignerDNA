@@ -113,8 +113,8 @@ def nrepeats(sequence: str, n: int) -> int:
     Examples:
         .. code-block:: python
 
-            n_stretch("AAAA", 1) == 3  #  True
-            n_stretch("AAAA", 2) == 1  #  True
-            n_stretch("ACAACAACA", 3) == 2  #  True
+            nrepeats("AAAA", 1) == 3  #  True
+            nrepeats("AAAA", 2) == 1  #  True
+            nrepeats("ACAACAACA", 3) == 2  #  True
 
     """
