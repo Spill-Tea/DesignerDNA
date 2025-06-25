@@ -6,7 +6,6 @@ from libc.stdlib cimport malloc, free
 
 cdef extern from "Python.h":
     str PyUnicode_FromStringAndSize(char*, Py_ssize_t)
-    char* PyUnicode_UTF8(object)
     Py_ssize_t PyUnicode_GET_LENGTH(object)
     # bint PyBytes_Check(object)
     # char* PyBytes_AS_STRING(object)
@@ -44,8 +43,7 @@ cdef inline StringView to_view(str sequence):
 
 cdef inline str to_str(StringView view):
     """Convert StringView back into a python string object, safely releasing memory."""
-    cdef:
-        str obj = PyUnicode_FromStringAndSize(view.ptr, view.size)
+    cdef str obj = PyUnicode_FromStringAndSize(view.ptr, view.size)
     free(view.ptr)
 
     return obj
