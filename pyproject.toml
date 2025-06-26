@@ -36,7 +36,7 @@ exclude = ["benchmarks", "build", "docs", "tests", "scripts"]
 
 [tool.setuptools.package-data]
 "*" = ["py.typed", "*.pyi"]
-"designer_dna.headers" = ["*.h"]
+"designer_dna.headers" = ["*.h", "*.pxd"]
 
 [project.optional-dependencies]
 dev = ["designer_dna[doc,test,lint,type,commit]", "tox"]
