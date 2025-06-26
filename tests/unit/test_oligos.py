@@ -155,6 +155,13 @@ def test_stretch(seq, expected: int, function: Callable[[str], int]) -> None:
         ("ATGC", 1, 0),
         ("AAAAACCCCCCGGGGGGG", 1, 6),
         ("ACACAC", 2, 2),
+        ("ATC" * 4, 3, 3),
+        ("A" + "ATC" * 4, 3, 3),
+        ("AG" + "ATC" * 4, 3, 3),
+        ("AG" + "ATC" * 4 + "C", 3, 3),
+        ("AG" + "ATC" * 4 + "CG", 3, 3),
+        ("G" + "ATC" * 4 + "C", 3, 3),
+        ("G" + "ATC" * 4 + "CG", 3, 3),
     ],
 )
 def test_nrepeats(

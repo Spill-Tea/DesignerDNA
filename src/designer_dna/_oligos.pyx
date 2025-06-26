@@ -100,6 +100,7 @@ cdef void c_complement(char* sequence, Py_ssize_t length, unsigned char[] table)
 
 
 cdef void v_complement(common.StringView view, bint dna):
+    """Handle complement on StringView directly, in place."""
     if dna:
         c_complement(view.ptr, view.size, DNA)
     else:
@@ -281,6 +282,7 @@ cpdef int stretch(str sequence):
 
 
 cdef inline bint _compare(char* p, char* q, Py_ssize_t start, Py_ssize_t end):
+    """Awkward slice comparison between two different size chars."""
     cdef:
         Py_ssize_t j, count = 0
 
