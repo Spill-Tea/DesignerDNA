@@ -225,23 +225,24 @@ cpdef str palindrome(str sequence, bint dna = True):
     cdef:
         common.StringView seq = common.str_to_view(sequence)
         common.StringView com = common.str_to_view(sequence)
-        Py_ssize_t i, l, r, current, length = 0, cr = 0, cl = 0
+        Py_ssize_t i, left, right, current, length = 0, start = 0, end = 0
 
     v_complement(com, dna)
 
     for i in range(seq.size - 1):
-        l = i
-        r = i + 1
-        _center(seq.ptr, com.ptr, &l, &r, seq.size)
-        current = r - l
+        left = i
+        right = i + 1
+        _center(seq.ptr, com.ptr, &left, &right, seq.size)
+        current = right - left
         if current > length:
             length = current
-            cr = r
-            cl = l
+            start = left
+            end = right
+
     free(seq.ptr)
     free(com.ptr)
 
-    return sequence[cl: cr]
+    return sequence[start: end]
 
 
 cpdef int stretch(str sequence):
