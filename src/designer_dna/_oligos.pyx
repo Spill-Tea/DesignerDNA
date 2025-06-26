@@ -1,52 +1,47 @@
+# BSD 3-Clause License
+
+# Copyright (c) 2025, Spill-Tea
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 # cython: boundscheck=False, wraparound=False, nonecheck=False
 """Cythonized oligonucleotide functions."""
 
-from libc.string cimport memcpy
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport free
 
 cdef extern from "Python.h":
-    str PyUnicode_FromStringAndSize(char*, Py_ssize_t)
     Py_ssize_t PyUnicode_GET_LENGTH(object)
-    # bint PyBytes_Check(object)
-    # char* PyBytes_AS_STRING(object)
-    # Py_ssize_t PyBytes_GET_SIZE(object)
+    bytes PyUnicode_AsUTF8String(object)
+    Py_ssize_t PyBytes_GET_SIZE(object)
+
+cimport common
 
 cdef extern from "oligos.h":
     const unsigned char DNA[0x100]
     const unsigned char RNA[0x100]
-
-# ctypedef fused StrT:
-#     str
-#     bytes
-
-
-cdef struct StringView:
-    char* ptr
-    Py_ssize_t size
-
-
-cdef inline StringView to_view(str sequence):
-    """Construct StringView, using Cpython C-API to construct a c char string."""
-    cdef:
-        Py_ssize_t length = PyUnicode_GET_LENGTH(sequence)
-        bytes temp = sequence.encode("utf8")
-        char* buffer = temp
-        StringView view
-
-    view.ptr = <char *> malloc((length + 1) * sizeof(char))
-    memcpy(view.ptr, buffer, length + 1)
-    view.ptr[length] = "\0"  # c string terminator
-    view.size = length
-
-    return view
-
-
-cdef inline str to_str(StringView view):
-    """Convert StringView back into a python string object, safely releasing memory."""
-    cdef str obj = PyUnicode_FromStringAndSize(view.ptr, view.size)
-    free(view.ptr)
-
-    return obj
 
 
 cdef void c_reverse(char* seq, Py_ssize_t length) noexcept:
@@ -121,14 +116,14 @@ cpdef str complement(str sequence, bint dna = True):
             complement("ATGC", False) == "UACG"
 
     """
-    cdef StringView view = to_view(sequence)
+    cdef common.StringView view = common.str_to_view(sequence)
 
     if dna:
         c_complement(view.ptr, view.size, DNA)
     else:
         c_complement(view.ptr, view.size, RNA)
 
-    return to_str(view)
+    return common.to_str(view)
 
 
 cdef void c_reverse_complement(
@@ -176,14 +171,14 @@ cpdef str reverse_complement(str sequence, bint dna = True):
             reverse_complement("ATGC", False) == "GCAU"
 
     """
-    cdef StringView view = to_view(sequence)
+    cdef common.StringView view = common.str_to_view(sequence)
 
     if dna:
         c_reverse_complement(view.ptr, view.size, DNA)
     else:
         c_reverse_complement(view.ptr, view.size, RNA)
 
-    return to_str(view)
+    return common.to_str(view)
 
 
 cdef bytes _expand_from_center(
@@ -223,16 +218,17 @@ cpdef str palindrome(str sequence, bint dna = True):
 
     Notes:
         * Uses a modified center expansion method (Manacher's algorithm) to identify the
-        longest substring that is palindromic.
+          longest substring that is palindromic.
         * If a sequence contains two or more palindromic substrings of equal size, the
-        first leftmost palindrome is prioritized.
+          first leftmost palindrome is prioritized.
 
     """
     cdef:
-        bytes temp = sequence.encode("utf8")
-        bytes comp = complement(sequence, dna).encode("utf8")
+        bytes temp = PyUnicode_AsUTF8String(sequence)
+        bytes comp = PyUnicode_AsUTF8String(complement(sequence, dna))
         bytes even, pal = b""
-        Py_ssize_t i, current, seq_length = len(sequence), length = 0
+        Py_ssize_t seq_length = PyUnicode_GET_LENGTH(sequence)
+        Py_ssize_t i, current, length = 0
 
     if seq_length < 2:  # noqa: PLR2004
         return ""
@@ -240,7 +236,7 @@ cpdef str palindrome(str sequence, bint dna = True):
     for i in range(seq_length - 1):
         # NOTE: Palindromic nucleotides are only even length, halving search space
         even = _expand_from_center(temp, comp, i, i + 1, seq_length)
-        current = len(even)
+        current = PyBytes_GET_SIZE(even)
         if current > length:
             pal = even
             length = current
@@ -265,19 +261,20 @@ cpdef int stretch(str sequence):
 
     """
     cdef:
-        bytes temp = sequence.encode("utf8")
-        char* buffer = temp
+        common.StringView view = common.str_to_view(sequence)
+        Py_ssize_t j
         int longest = 0, current = 0
-        char c, prev = buffer[0]
+        char prev = view.ptr[0]
 
-    for c in buffer[1:]:
-        if c == prev:
+    for j in range(1, view.size):
+        if view.ptr[j] == prev:
             current += 1
             if current > longest:
                 longest = current
         else:
             current = 0
-            prev = c
+            prev = view.ptr[j]
+    free(view.ptr)
 
     return longest
 
@@ -304,21 +301,19 @@ cpdef int nrepeats(str sequence, int n):
             nrepeats("ACAACAACA", 3) == 2  #  True
 
     """
-    if n < 1:
-        raise ValueError("n must be greater than 0.")
-    if n == 1:
-        return stretch(sequence)
-
     cdef:
-        bytes phase, temp = sequence.encode("utf8")
-        char* buffer = temp
-        int i, j, k, max_val = 0
-        list[char] previous = [buffer[i : n + i] for i in range(n)]
-        list[int] current = [0 for _ in range(n)]
+        common.StringView view = common.str_to_view(sequence)
+        Py_ssize_t t = <Py_ssize_t> n
+        Py_ssize_t v = view.size // t
+        Py_ssize_t i, j, k
+        int max_val = 0
+        list[char] previous = [view.ptr[i : t + i] for i in range(t)]
+        list[int] current = [0 for i in range(t)]
+        bytes phase
 
-    for j in range(n, len(sequence), n):
-        for k in range(n):
-            phase = buffer[j + k : j + k + n]
+    for j in range(1, v):
+        for k in range(t):
+            phase = view.ptr[j * t + k : j * t + k + t]
             if phase == previous[k]:
                 current[k] += 1
                 if current[k] > max_val:
@@ -326,5 +321,6 @@ cpdef int nrepeats(str sequence, int n):
             else:
                 current[k] = 0
                 previous[k] = phase
+    free(view.ptr)
 
     return max_val

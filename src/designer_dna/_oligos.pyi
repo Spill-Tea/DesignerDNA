@@ -73,9 +73,9 @@ def palindrome(sequence: str, dna: bool = ...) -> str:
 
     Notes:
         * Uses a modified center expansion method (Manacher's algorithm) to identify the
-        longest substring that is palindromic.
+          longest substring that is palindromic.
         * If a sequence contains two or more palindromic substrings of equal size, the
-        first leftmost palindrome is prioritized.
+          first leftmost palindrome is prioritized.
 
     """
 
