@@ -30,7 +30,7 @@
 # cython: boundscheck=False, wraparound=False, nonecheck=False
 """Cythonized oligonucleotide functions."""
 
-from libc.stdlib cimport free
+from libc.stdlib cimport free, malloc
 
 cdef extern from "Python.h":
     Py_ssize_t PyUnicode_GET_LENGTH(object)
@@ -44,7 +44,7 @@ cdef extern from "oligos.h":
     const unsigned char RNA[0x100]
 
 
-cdef void c_reverse(char* seq, Py_ssize_t length) noexcept:
+cdef inline void c_reverse(char* seq, Py_ssize_t length) noexcept:
     """Reverse a C string in place.
 
     Args:
@@ -280,12 +280,34 @@ cpdef int stretch(str sequence):
     return longest
 
 
+cdef inline bint _compare(char* p, char* q, Py_ssize_t start, Py_ssize_t end):
+    cdef:
+        Py_ssize_t j, count = 0
+
+    for j in range(start, end):
+        if p[j] != q[count]:
+            return False
+        count += 1
+
+    return True
+
+
+cdef inline void _assign(char* src, char* dest, Py_ssize_t start, Py_ssize_t end):
+    """Overcome assigning a substring slice to another char variable."""
+    cdef:
+        Py_ssize_t j, count = 0
+
+    for j in range(start, end):
+        dest[count] = src[j]
+        count += 1
+
+
 cpdef int nrepeats(str sequence, int n):
     """Calculate the maximum observed repeats of composite pattern size n characters.
 
     Args:
         sequence (str): Nucleotide sequence string.
-        n (int): stretch of k-mers to observe.
+        n (int): Size of k-mers (composite pattern) to observe.
 
     Returns:
         (int) The longest tandem run of nucleotides comprised of a composite pattern
@@ -307,21 +329,22 @@ cpdef int nrepeats(str sequence, int n):
         Py_ssize_t t = <Py_ssize_t> n
         Py_ssize_t v = view.size // t
         Py_ssize_t i, j, k
-        int max_val = 0
-        list[char] previous = [view.ptr[i : t + i] for i in range(t)]
-        list[int] current = [0 for i in range(t)]
-        bytes phase
+        int current, max_val = 0
+        char* previous = <char *> malloc((t + 1) * sizeof(char))
 
-    for j in range(1, v):
-        for k in range(t):
-            phase = view.ptr[j * t + k : j * t + k + t]
-            if phase == previous[k]:
-                current[k] += 1
-                if current[k] > max_val:
-                    max_val = current[k]
+    for k in range(t):
+        _assign(view.ptr, previous, k, t + k)
+        current = 0
+        for j in range(1, v):
+            if _compare(view.ptr, previous, j * t + k, j * t + k + t):
+                current += 1
+                if current > max_val:
+                    max_val = current
             else:
-                current[k] = 0
-                previous[k] = phase
+                current = 0
+                _assign(view.ptr, previous, j * t + k, j * t + k + t)
+
     free(view.ptr)
+    free(previous)
 
     return max_val

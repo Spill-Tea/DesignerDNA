@@ -101,7 +101,7 @@ def nrepeats(sequence: str, n: int) -> int:
 
     Args:
         sequence (str): Nucleotide sequence string.
-        n (int): stretch of k-mers to observe.
+        n (int): Size of k-mers (composite pattern) to observe.
 
     Returns:
         (int) The longest tandem run of nucleotides comprised of a composite pattern
