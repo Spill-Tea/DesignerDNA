@@ -99,6 +99,13 @@ cdef void c_complement(char* sequence, Py_ssize_t length, unsigned char[] table)
         sequence[idx] = table[<unsigned char> sequence[idx]]
 
 
+cdef void v_complement(common.StringView view, bint dna):
+    if dna:
+        c_complement(view.ptr, view.size, DNA)
+    else:
+        c_complement(view.ptr, view.size, RNA)
+
+
 cpdef str complement(str sequence, bint dna = True):
     """Complement a nucleotide sequence.
 
@@ -117,11 +124,7 @@ cpdef str complement(str sequence, bint dna = True):
 
     """
     cdef common.StringView view = common.str_to_view(sequence)
-
-    if dna:
-        c_complement(view.ptr, view.size, DNA)
-    else:
-        c_complement(view.ptr, view.size, RNA)
+    v_complement(view, dna)
 
     return common.to_str(view)
 
@@ -181,23 +184,19 @@ cpdef str reverse_complement(str sequence, bint dna = True):
     return common.to_str(view)
 
 
-cdef bytes _expand_from_center(
-    bytes seq,
-    bytes comp,
-    Py_ssize_t left,
-    Py_ssize_t right,
+cdef void _center(
+    char* seq,
+    char* comp,
+    Py_ssize_t* left,
+    Py_ssize_t* right,
     Py_ssize_t length,
-):
-    while (
-        left > -1
-        and right < length
-        and seq[left] == comp[right]
-        and seq[right] == comp[left]  # required to detect dna to rna based complements
-    ):
-        left -= 1
-        right += 1
-
-    return seq[left + 1 : right]
+) noexcept:
+    while (left[0] > -1 and right[0] < length):
+        if seq[left[0]] != comp[right[0]] or seq[right[0]] != comp[left[0]]:
+            break
+        left[0] -= 1
+        right[0] += 1
+    left[0] += 1
 
 
 cpdef str palindrome(str sequence, bint dna = True):
@@ -224,24 +223,25 @@ cpdef str palindrome(str sequence, bint dna = True):
 
     """
     cdef:
-        bytes temp = PyUnicode_AsUTF8String(sequence)
-        bytes comp = PyUnicode_AsUTF8String(complement(sequence, dna))
-        bytes even, pal = b""
-        Py_ssize_t seq_length = PyUnicode_GET_LENGTH(sequence)
-        Py_ssize_t i, current, length = 0
+        common.StringView seq = common.str_to_view(sequence)
+        common.StringView com = common.str_to_view(sequence)
+        Py_ssize_t i, l, r, current, length = 0, cr = 0, cl = 0
 
-    if seq_length < 2:  # noqa: PLR2004
-        return ""
+    v_complement(com, dna)
 
-    for i in range(seq_length - 1):
-        # NOTE: Palindromic nucleotides are only even length, halving search space
-        even = _expand_from_center(temp, comp, i, i + 1, seq_length)
-        current = PyBytes_GET_SIZE(even)
+    for i in range(seq.size - 1):
+        l = i
+        r = i + 1
+        _center(seq.ptr, com.ptr, &l, &r, seq.size)
+        current = r - l
         if current > length:
-            pal = even
             length = current
+            cr = r
+            cl = l
+    free(seq.ptr)
+    free(com.ptr)
 
-    return pal.decode("utf8")
+    return sequence[cl: cr]
 
 
 cpdef int stretch(str sequence):
