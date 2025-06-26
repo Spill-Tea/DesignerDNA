@@ -180,6 +180,14 @@ def test_nrepeats(
         ("AAAA", False, ""),
         ("ATATATATATAT", True, "ATATATATATAT"),
         ("ATATATATATAT", False, ""),
+        ("TGGATCCA", True, "TGGATCCA"),
+        ("ATGGATCCA", True, "TGGATCCA"),
+        ("AATGGATCCA", True, "TGGATCCA"),
+        ("TGGATCCAT", True, "TGGATCCA"),
+        ("TGGATCCATT", True, "TGGATCCA"),
+        ("GAATTC", True, "GAATTC"),
+        ("ATGAATTC", True, "GAATTC"),
+        ("CTTAAG", True, "CTTAAG"),
     ],
 )
 def test_palindromes(
