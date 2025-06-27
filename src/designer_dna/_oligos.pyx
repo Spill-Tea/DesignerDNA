@@ -37,7 +37,11 @@ cdef extern from "Python.h":
     bytes PyUnicode_AsUTF8String(object)
     Py_ssize_t PyBytes_GET_SIZE(object)
 
-cimport common
+from common cimport (
+    StringView,
+    str_to_view,
+    to_str
+)
 
 cdef extern from "oligos.h":
     const unsigned char DNA[0x100]
@@ -92,14 +96,14 @@ cdef void c_complement(char* sequence, Py_ssize_t length, unsigned char[] table)
 
     for j in range(idx):
         end = (length - 1) - j
-        sequence[j] = table[<unsigned char> sequence[j]]
-        sequence[end] = table[<unsigned char> sequence[end]]
+        sequence[j] = table[<ssize_t> sequence[j]]
+        sequence[end] = table[<ssize_t> sequence[end]]
 
     if length % 2:
-        sequence[idx] = table[<unsigned char> sequence[idx]]
+        sequence[idx] = table[<ssize_t> sequence[idx]]
 
 
-cdef void v_complement(common.StringView view, bint dna):
+cdef void v_complement(StringView view, bint dna):
     """Handle complement on StringView directly, in place."""
     if dna:
         c_complement(view.ptr, view.size, DNA)
@@ -124,10 +128,10 @@ cpdef str complement(str sequence, bint dna = True):
             complement("ATGC", False) == "UACG"
 
     """
-    cdef common.StringView view = common.str_to_view(sequence)
+    cdef StringView view = str_to_view(sequence)
     v_complement(view, dna)
 
-    return common.to_str(view)
+    return to_str(view)
 
 
 cdef void c_reverse_complement(
@@ -148,14 +152,14 @@ cdef void c_reverse_complement(
 
     while end_ptr > sequence:
         sequence[0], end_ptr[0] = (
-            table[<unsigned char> end_ptr[0]],
-            table[<unsigned char> sequence[0]]
+            table[<ssize_t> end_ptr[0]],
+            table[<ssize_t> sequence[0]]
         )
         end_ptr -= 1
         sequence += 1
 
     if length % 2:
-        sequence[0] = table[<unsigned char> sequence[0]]
+        sequence[0] = table[<ssize_t> sequence[0]]
 
 
 cpdef str reverse_complement(str sequence, bint dna = True):
@@ -175,14 +179,14 @@ cpdef str reverse_complement(str sequence, bint dna = True):
             reverse_complement("ATGC", False) == "GCAU"
 
     """
-    cdef common.StringView view = common.str_to_view(sequence)
+    cdef StringView view = str_to_view(sequence)
 
     if dna:
         c_reverse_complement(view.ptr, view.size, DNA)
     else:
         c_reverse_complement(view.ptr, view.size, RNA)
 
-    return common.to_str(view)
+    return to_str(view)
 
 
 cdef void _center(
@@ -224,8 +228,8 @@ cpdef str palindrome(str sequence, bint dna = True):
 
     """
     cdef:
-        common.StringView seq = common.str_to_view(sequence)
-        common.StringView com = common.str_to_view(sequence)
+        StringView seq = str_to_view(sequence)
+        StringView com = str_to_view(sequence)
         Py_ssize_t i, left, right, current, length = 0, start = 0, end = 0
 
     v_complement(com, dna)
@@ -263,7 +267,7 @@ cpdef int stretch(str sequence):
 
     """
     cdef:
-        common.StringView view = common.str_to_view(sequence)
+        StringView view = str_to_view(sequence)
         Py_ssize_t j
         int longest = 0, current = 0
         char prev = view.ptr[0]
@@ -327,7 +331,7 @@ cpdef int nrepeats(str sequence, int n):
 
     """
     cdef:
-        common.StringView view = common.str_to_view(sequence)
+        StringView view = str_to_view(sequence)
         Py_ssize_t t = <Py_ssize_t> n
         Py_ssize_t v = view.size // t
         Py_ssize_t i, j, k
