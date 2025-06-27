@@ -27,16 +27,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Example unit tests."""
+"""DesignerDNA Project."""
 
-from PyTemplate import __version__
-
-
-def test_version_type():
-    """Test defined version is a string."""
-    assert isinstance(__version__, str), "Expected string format version"
-
-
-def test_version_value():
-    """Test version string starts with the letter v."""
-    assert __version__.lower().startswith("v"), "Expected version to begin with `v`"
+__version__: str = "v0.0.1"

@@ -1,39 +1,46 @@
 [build-system]
-requires = ["setuptools>=67.6.1"]
+requires = ["setuptools>=67.6.1", "cython>=3.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "PyTemplate"
+name = "designer_dna"
 authors = [{ name = "Jason C Del Rio", email = "spillthetea917@gmail.com" }]
 maintainers = [{ name = "Jason C Del Rio", email = "spillthetea917@gmail.com" }]
 description = "Project description here."
 license = { file = "LICENSE" }
-requires-python = ">=3.7"
-keywords = ["keyword1", "keyword2"]
-classifiers = ["Programming Language :: Python :: 3"]
+requires-python = ">=3.11"
+keywords = ["DNA", "design", "ligation", "optimization"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Bio-Informatics"
+]
 dynamic = ["version", "readme", "dependencies"]
 
 [project.urls]
-homepage = "https://github.com/Spill-Tea/PyTemplate"
-issues = "https://github.com/Spill-Tea/PyTemplate/issues"
+homepage = "https://github.com/Spill-Tea/DesignerDNA"
+issues = "https://github.com/Spill-Tea/DesignerDNA/issues"
 
 [tool.setuptools.dynamic]
-version = { attr = "PyTemplate.__version__" }
+version = { attr = "designer_dna.__version__" }
 readme = { file = ["README.md"], content-type = "text/markdown" }
 dependencies = { file = ["requirements.txt"] }
 
 [tool.setuptools]
-package-dir = { "" = "src" }
+package-dir = { "" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-exclude = ["benchmarks", "docs", "tests"]
+exclude = ["benchmarks", "build", "docs", "tests", "scripts"]
 
 [tool.setuptools.package-data]
 "*" = ["py.typed", "*.pyi"]
+"designer_dna.headers" = ["*.h", "*.pxd"]
 
 [project.optional-dependencies]
-dev = ["PyTemplate[doc,test,lint,type]", "tox", "pre-commit"]
+dev = ["designer_dna[doc,test,lint,type,commit]", "tox"]
+commit = ["pre-commit"]
 doc = ["sphinx", "sphinx-rtd-theme"]
 test = ["pytest", "coverage", "pytest-xdist"]
 lint = ["pylint", "ruff"]
@@ -46,7 +53,7 @@ addopts = "-n auto -rA"
 [tool.coverage.run]
 parallel = true
 branch = true
-source = ["PyTemplate"]
+source = ["designer_dna"]
 disable_warnings = ["no-data-collected", "module-not-imported"]
 
 [tool.coverage.paths]
@@ -61,14 +68,14 @@ skip_empty = true
 exclude_also = ["def __repr__", 'if __name__ == "__main__"']
 
 [tool.mypy]
-mypy_path = "PyTemplate"
+mypy_path = "designer_dna"
 warn_unused_ignores = true
 allow_redefinition = false
 force_uppercase_builtins = true
 
 [tool.pylint.main]
 # extension-pkg-whitelist = []
-ignore = ["tests", "dist", "build"]
+ignore = ["dist", "build"]
 fail-under = 9.0
 jobs = 0
 limit-inference-results = 100
@@ -86,8 +93,10 @@ module-naming-style = "any"
 [tool.pylint.format]
 max-line-length = 88
 
-# [tool.pylint."messages control"]
-# disable = []
+[tool.pylint."messages control"]
+disable = [
+  "R1731" # consider-using-max-builtin
+]
 
 [tool.ruff]
 line-length = 88
@@ -118,6 +127,7 @@ ignore = [
   "D213",    # multi-line-summary-second-line (D213)
   "PLR0913", # too-many-arguments (PLR0913)
   "C408",    # unnecessary-collection-call (C408)
+  "PYI021",  # docstring-in-stub (PYI021)
 ]
 
 [tool.ruff.lint.pydocstyle]
@@ -128,7 +138,7 @@ lines-after-imports = 2
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
-  "E402", # Import Statement not at Top of File
+  "E402", # Import Statement not at top of file
   "F401", # Unused Imports
 ]
 "tests/*.py" = [
