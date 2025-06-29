@@ -19,7 +19,5 @@ repos:
       - id: addlicense
         language: golang
         exclude: ^docs/
-        args: [
-          -f, LICENSE,
-          ]
+        args: [ -f, LICENSE ]
         types_or: [ python, cython, c ]
