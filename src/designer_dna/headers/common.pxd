@@ -33,18 +33,12 @@ from libc.string cimport memcpy
 from libc.stdlib cimport free, malloc
 
 cdef extern from "Python.h":
-    bint PyBytes_Check(object)
     Py_ssize_t PyUnicode_GET_LENGTH(object)
     bytes PyUnicode_AsUTF8String(object)
     Py_ssize_t PyBytes_GET_SIZE(object)
     char* PyBytes_AS_STRING(object)
     str PyUnicode_DecodeUTF8Stateful(char*, Py_ssize_t, char*, Py_ssize_t*)
     bytes PyBytes_FromStringAndSize(char*, Py_ssize_t)
-
-
-# ctypedef fused StrT:
-#     str
-#     bytes
 
 
 cdef struct StringView:
@@ -54,6 +48,7 @@ cdef struct StringView:
 
 
 cdef inline StringView construct(bytes s, Py_ssize_t length, bint isbytes):
+    """Construct the StringView from a python bytes object."""
     cdef:
         char* buffer = PyBytes_AS_STRING(s)
         StringView view
@@ -97,20 +92,3 @@ cdef inline bytes to_bytes(StringView view):
     free(view.ptr)
 
     return obj
-
-
-# TODO: Cannot coerce to a type that is not specialized
-# cdef inline StringView handle_input(StrT received):
-#     """Primary interface to handle both string and bytes python objects."""
-#     if PyBytes_Check(received):
-#         return bytes_to_view(<bytes> received)
-
-#     return str_to_view(<str> received)
-
-
-# cdef inline StrT convert_output(StringView view):
-#     """Primary interface to handle conversion output back to python objects."""
-#     if view.origin:
-#         return to_bytes(view)
-
-#     return to_str(view)
