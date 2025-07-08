@@ -219,10 +219,11 @@ cpdef str palindrome(str sequence, bint dna = True):
 
             palindrome("ATAT") == "ATAT"
             palindrome("GATATG") == "ATAT"
+            palindrome("ANT") == "ANT" # Handles degenerate bases
+            palindrome("UGCA", False) == "UGCA"  # Handles RNA sequences
 
     Notes:
-        * Uses a modified center expansion method (Manacher's algorithm) to identify the
-          longest substring that is palindromic.
+        * Algorithmic time complexity O(NlogN).
         * If a sequence contains two or more palindromic substrings of equal size, the
           first leftmost palindrome is prioritized.
 
@@ -235,7 +236,21 @@ cpdef str palindrome(str sequence, bint dna = True):
     v_complement(com, dna)
 
     for i in range(seq.size - 1):
+        # Check even length palindromes first (more common for ATGC based sequences)
         left = i
+        right = i + 1
+        _center(seq.ptr, com.ptr, &left, &right, seq.size)
+        current = right - left
+        if current > length:
+            length = current
+            start = left
+            end = right
+
+        # Only check odd length palindromes in case of (center) degenerate bases
+        if seq.ptr[i] != com.ptr[i]:
+            continue
+
+        left = i - 1
         right = i + 1
         _center(seq.ptr, com.ptr, &left, &right, seq.size)
         current = right - left
