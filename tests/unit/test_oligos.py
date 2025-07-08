@@ -60,12 +60,9 @@ complements = [
     ("", False, ""),
 ]
 
-for k, v in oligos.BASEPAIRS_DNA.items():
-    for j in (True, False):
-        if j:
-            complements.append((k, j, v))
-        else:
-            complements.append((k, j, oligos.BASEPAIRS_RNA[k]))
+for _k, _v in oligos.BASEPAIRS_DNA.items():
+    for _j in (True, False):
+        complements.append((_k, _j, _v if _j else oligos.BASEPAIRS_RNA[_k]))
 
 
 @pytest.mark.parametrize(
@@ -87,6 +84,16 @@ for k, v in oligos.BASEPAIRS_DNA.items():
         ("AGTCNURYSWKMBVDH-.", False, "UCAGNAYRSWMKVBHD-."),
         ("agtcnuryswkmbvdh-.", True, "TCAGNAYRSWMKVBHD-."),
         ("agtcnuryswkmbvdh-.", False, "UCAGNAYRSWMKVBHD-."),
+        (
+            "".join(oligos.BASEPAIRS_DNA.keys()),
+            True,
+            "".join(oligos.BASEPAIRS_DNA.values()),
+        ),
+        (
+            "".join(oligos.BASEPAIRS_RNA.keys()),
+            False,
+            "".join(oligos.BASEPAIRS_RNA.values()),
+        ),
     ],
 )
 def test_complement(
@@ -136,6 +143,9 @@ def test_reverse_complement(
     [
         ("", 0),
         ("A", 0),
+        ("AA", 1),
+        ("TAA", 1),
+        ("AAT", 1),
         ("ATGC", 0),
         ("AAAAACCCCCCGGGGGGG", 6),
     ],
@@ -175,7 +185,13 @@ def test_nrepeats(
     assert result == expected, f"Unexpected stretch calculation: {result}"
 
 
-@pytest.mark.parametrize("function", [oligos.palindrome, oligos.palindrome_py])
+@pytest.mark.parametrize(
+    "function",
+    [
+        oligos.palindrome,
+        oligos.palindrome_py,
+    ],
+)
 @pytest.mark.parametrize(
     ["seq", "dna", "expected"],
     [
@@ -195,6 +211,10 @@ def test_nrepeats(
         ("GAATTC", True, "GAATTC"),
         ("ATGAATTC", True, "GAATTC"),
         ("CTTAAG", True, "CTTAAG"),
+        ("ANT", True, "ANT"),
+        ("AANT", True, "ANT"),
+        ("AWSNSWT", True, "AWSNSWT"),
+        ("AWSSWT", True, "AWSSWT"),
     ],
 )
 def test_palindromes(

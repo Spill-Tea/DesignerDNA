@@ -27,7 +27,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""oligos."""
+"""Common utility functions to work with and analyze oligonucleotide sequences."""
 
 from ._oligos import (
     complement,
@@ -161,12 +161,12 @@ def _center_expansion(
     left: int,
     right: int,
     length: int,
-) -> str:
+) -> tuple[int, int]:
     while left > -1 and right < length and s[left] == c[right] and s[right] == c[left]:
         left -= 1
         right += 1
 
-    return s[left + 1 : right]
+    return left + 1, right
 
 
 def palindrome_py(sequence: str, dna: bool = True) -> str:
@@ -186,29 +186,42 @@ def palindrome_py(sequence: str, dna: bool = True) -> str:
             palindrome_py("GATATG") == "ATAT"
 
     Notes:
-        * Uses a modified center expansion method (Manacher's algorithm) to identify the
-          longest substring that is palindromic in O(n) time complexity.
+        * Algorithmic time complexity is O(N).
         * If a sequence contains two or more palindromic substrings of equal size, the
           first leftmost palindrome is prioritized.
-        * Ambiguous IUPAC nucleotide characters are not supported. Only ATGCU.
 
     """
     seq_length: int = len(sequence)
     comp: str = complement_py(sequence, dna)
-    pal: str = ""
+    best_left: int = 0
+    best_right: int = 0
+    left: int = 0
+    right: int = 0
     length: int = 0
-    if seq_length < 2:
-        return pal
 
     for i in range(seq_length - 1):
-        # Palindromic nucleotides are only even length, reducing search space in half
-        even: str = _center_expansion(sequence, comp, i, i + 1, seq_length)
-        current: int = len(even)
+        # If we only consider ATGC based sequences, then Palindromic nucleotides are
+        # only even length, reducing search space in half
+        left, right = _center_expansion(sequence, comp, i, i + 1, seq_length)
+        current: int = right - left
         if current > length:
-            pal = even
             length = current
+            best_left = left
+            best_right = right
 
-    return pal
+        # Handle Degenerate bases which equals it's complement (e.g. N, S, W)
+        # We can have odd length palindromes if a degenerate base is at the center
+        if sequence[i] != comp[i]:
+            continue
+
+        left, right = _center_expansion(sequence, comp, i - 1, i + 1, seq_length)
+        current = right - left
+        if current > length:
+            length = current
+            best_left = left
+            best_right = right
+
+    return sequence[best_left:best_right]
 
 
 def stretch_py(sequence: str) -> int:
