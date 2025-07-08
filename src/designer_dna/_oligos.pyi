@@ -99,6 +99,8 @@ def palindrome(sequence: str, dna: bool = ...) -> str:
 
             palindrome("ATAT") == "ATAT"
             palindrome("GATATG") == "ATAT"
+            palindrome("ANT") == "ANT" # Handles degenerate bases
+            palindrome("UGCA", False) == "UGCA"  # Handles RNA sequences
 
     Notes:
         * Algorithmic time complexity O(NlogN).
