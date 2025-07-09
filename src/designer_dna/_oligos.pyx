@@ -204,6 +204,21 @@ cdef void _center(
     left[0] += 1
 
 
+cdef inline void _update_bounds(
+    Py_ssize_t left,
+    Py_ssize_t right,
+    Py_ssize_t* current,
+    Py_ssize_t* length,
+    Py_ssize_t* start,
+    Py_ssize_t* end
+) noexcept:
+    current[0] = right - left
+    if current[0] > length[0]:
+        length[0] = current[0]
+        start[0] = left
+        end[0] = right
+
+
 cpdef str palindrome(str sequence, bint dna = True):
     """Find the longest palindromic substring within a nucleotide sequence.
 
@@ -240,11 +255,7 @@ cpdef str palindrome(str sequence, bint dna = True):
         left = i
         right = i + 1
         _center(seq.ptr, com.ptr, &left, &right, seq.size)
-        current = right - left
-        if current > length:
-            length = current
-            start = left
-            end = right
+        _update_bounds(left, right, &current, &length, &start, &end)
 
         # Only check odd length palindromes in case of (center) degenerate bases
         if seq.ptr[i] != com.ptr[i]:
@@ -253,11 +264,7 @@ cpdef str palindrome(str sequence, bint dna = True):
         left = i - 1
         right = i + 1
         _center(seq.ptr, com.ptr, &left, &right, seq.size)
-        current = right - left
-        if current > length:
-            length = current
-            start = left
-            end = right
+        _update_bounds(left, right, &current, &length, &start, &end)
 
     free(seq.ptr)
     free(com.ptr)
