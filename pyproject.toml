@@ -98,6 +98,12 @@ disable = [
   "R1731" # consider-using-max-builtin
 ]
 
+[tool.pylint."*.pyi"]
+disable = [
+  "W0613", # unused-argument
+  "W0231" # super-init-not-called
+]
+
 [tool.ruff]
 line-length = 88
 indent-width = 4
