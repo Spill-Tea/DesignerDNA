@@ -32,6 +32,9 @@
 import os
 import sys
 
+from sphinx.application import Sphinx
+from sphinx.highlighting import lexer_classes
+
 
 sys.path.insert(0, os.path.abspath("../src/"))
 sys.path.append(os.path.abspath("./_ext"))  # Required for custom extensions
@@ -51,6 +54,8 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
 ]
+autosummary_generate = True  # Turn on sphinx.ext.autosummary
+napoleon_google_docstring = True
 
 templates_path = ["_templates"]
 exclude_patterns = []
@@ -63,3 +68,14 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 pygments_style = "styles.VSCodeDarkPlus"
+
+
+def setup(app: Sphinx) -> None:
+    """Custom sphinx application startup setup."""
+    from lexer import CustomPythonLexer
+
+    app.add_lexer("python", CustomPythonLexer)
+    assert "python" in lexer_classes, "python language not found in registry"
+    assert lexer_classes["python"] == CustomPythonLexer, (
+        "custom Lexer not found in registry."
+    )
