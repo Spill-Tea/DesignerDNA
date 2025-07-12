@@ -29,6 +29,7 @@
 
 """Common utility functions to work with and analyze oligonucleotide sequences."""
 
+from ._oligonucleotides import manacher
 from ._oligos import (
     complement,
     nrepeats,
@@ -42,6 +43,7 @@ from ._oligos import (
 __all__ = [
     "complement",
     "complement_py",
+    "manacher",
     "nrepeats",
     "nrepeats_py",
     "palindrome",

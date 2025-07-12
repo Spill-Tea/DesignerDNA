@@ -190,6 +190,7 @@ def test_nrepeats(
     [
         oligos.palindrome,
         oligos.palindrome_py,
+        oligos.manacher,
     ],
 )
 @pytest.mark.parametrize(
