@@ -4,11 +4,10 @@ DesignerDNA documentation
 Design, fiddle, and optimize DNA sequences.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :hidden:
 
-   api/modules
-
+   Home page <self>
+   API reference <api/index>
 
 Indices and tables
 ==================
