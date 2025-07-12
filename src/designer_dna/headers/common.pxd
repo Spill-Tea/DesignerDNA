@@ -41,7 +41,7 @@ cdef extern from "Python.h":
     bytes PyBytes_FromStringAndSize(char*, Py_ssize_t)
 
 
-cdef struct StringView:
+ctypedef struct StringView:
     char* ptr
     Py_ssize_t size
     bint origin

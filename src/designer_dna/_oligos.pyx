@@ -82,7 +82,11 @@ cpdef str reverse(str sequence):
     return sequence[::-1]
 
 
-cdef void c_complement(char* sequence, Py_ssize_t length, unsigned char* table):
+cdef void c_complement(
+    char* sequence,
+    Py_ssize_t length,
+    unsigned char* table
+) noexcept:
     """Complement sequence C string in place.
 
     Args:
@@ -103,7 +107,7 @@ cdef void c_complement(char* sequence, Py_ssize_t length, unsigned char* table):
         sequence[idx] = table[<ssize_t> sequence[idx]]
 
 
-cdef inline void v_complement(StringView* view, bint dna):
+cdef inline void v_complement(StringView* view, bint dna) noexcept:
     """Handle complement in place on StringView directly."""
     if dna:
         c_complement(view[0].ptr, view[0].size, &DNA[0])
@@ -138,7 +142,7 @@ cdef void c_reverse_complement(
     char* sequence,
     Py_ssize_t length,
     unsigned char* table
-):
+) noexcept:
     """Reverse complement sequence C string in place.
 
     Args:
@@ -162,7 +166,7 @@ cdef void c_reverse_complement(
         sequence[0] = table[<ssize_t> sequence[0]]
 
 
-cdef inline void v_reverse_complement(StringView* view, bint dna):
+cdef inline void v_reverse_complement(StringView* view, bint dna) noexcept:
     """Handle reverse complement in place on StringView directly."""
     if dna:
         c_reverse_complement(view[0].ptr, view[0].size, &DNA[0])
@@ -311,7 +315,12 @@ cpdef int stretch(str sequence):
     return longest
 
 
-cdef inline bint _compare(char* p, char* q, Py_ssize_t start, Py_ssize_t end):
+cdef inline bint _compare(
+    char* p,
+    char* q,
+    Py_ssize_t start,
+    Py_ssize_t end
+) noexcept:
     """Awkward slice comparison between two different size chars."""
     cdef:
         Py_ssize_t j, count = 0
