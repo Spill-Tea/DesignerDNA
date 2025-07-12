@@ -14,7 +14,7 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
-  "Topic :: Scientific/Engineering :: Bio-Informatics"
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dynamic = ["version", "readme", "dependencies"]
 
@@ -28,7 +28,7 @@ readme = { file = ["README.md"], content-type = "text/markdown" }
 dependencies = { file = ["requirements.txt"] }
 
 [tool.setuptools]
-package-dir = { "" = "src"}
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -75,11 +75,6 @@ force_uppercase_builtins = true
 
 [tool.pylint.main]
 # extension-pkg-whitelist = []
-extension-pkg-allow-list = [
-  "designer_dna._oligonucleotides",
-  "designer_dna._oligos"
-]
-
 ignore = ["dist", "build"]
 fail-under = 9.0
 jobs = 0
@@ -100,13 +95,14 @@ max-line-length = 88
 
 [tool.pylint."messages control"]
 disable = [
-  "R1731" # consider-using-max-builtin
+  "R1731", # consider-using-max-builtin
+  "E0401", # import-error
 ]
 
 [tool.pylint."*.pyi"]
 disable = [
   "W0613", # unused-argument
-  "W0231" # super-init-not-called
+  "W0231", # super-init-not-called
 ]
 
 [tool.ruff]
