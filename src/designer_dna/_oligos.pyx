@@ -32,11 +32,6 @@
 
 from libc.stdlib cimport free, malloc
 
-cdef extern from "Python.h":
-    Py_ssize_t PyUnicode_GET_LENGTH(object)
-    bytes PyUnicode_AsUTF8String(object)
-    Py_ssize_t PyBytes_GET_SIZE(object)
-
 from common cimport (
     StringView,
     str_to_view,
@@ -63,6 +58,11 @@ cdef inline void c_reverse(char* seq, Py_ssize_t length) noexcept:
         seq[start], seq[end] = seq[end], seq[start]
 
 
+cdef inline void v_reverse(StringView* view) noexcept:
+    """Handle reverse in place on StringView directly."""
+    c_reverse(view[0].ptr, view[0].size)
+
+
 cpdef str reverse(str sequence):
     """Reverse a nucleotide sequence.
 
@@ -82,13 +82,17 @@ cpdef str reverse(str sequence):
     return sequence[::-1]
 
 
-cdef void c_complement(char* sequence, Py_ssize_t length, unsigned char[] table):
+cdef void c_complement(
+    char* sequence,
+    Py_ssize_t length,
+    unsigned char* table
+) noexcept:
     """Complement sequence C string in place.
 
     Args:
         seq (char*): buffer sequence.
         length (Py_ssize_t): length of seq.
-        table (char[]): translation table.
+        table (unsigned char*): translation table.
 
     """
     cdef:
@@ -103,12 +107,12 @@ cdef void c_complement(char* sequence, Py_ssize_t length, unsigned char[] table)
         sequence[idx] = table[<ssize_t> sequence[idx]]
 
 
-cdef void v_complement(StringView view, bint dna):
-    """Handle complement on StringView directly, in place."""
+cdef inline void v_complement(StringView* view, bint dna) noexcept:
+    """Handle complement in place on StringView directly."""
     if dna:
-        c_complement(view.ptr, view.size, DNA)
+        c_complement(view[0].ptr, view[0].size, &DNA[0])
     else:
-        c_complement(view.ptr, view.size, RNA)
+        c_complement(view[0].ptr, view[0].size, &RNA[0])
 
 
 cpdef str complement(str sequence, bint dna = True):
@@ -129,7 +133,7 @@ cpdef str complement(str sequence, bint dna = True):
 
     """
     cdef StringView view = str_to_view(sequence)
-    v_complement(view, dna)
+    v_complement(&view, dna)
 
     return to_str(view)
 
@@ -137,14 +141,14 @@ cpdef str complement(str sequence, bint dna = True):
 cdef void c_reverse_complement(
     char* sequence,
     Py_ssize_t length,
-    unsigned char[] table
-):
+    unsigned char* table
+) noexcept:
     """Reverse complement sequence C string in place.
 
     Args:
         sequence (char*): buffer pointer to nucleotide char sequence.
         length (Py_ssize_t): length of seq.
-        table (char[]): translation table.
+        table (unsigned char*): translation table.
 
     """
     cdef:
@@ -162,11 +166,19 @@ cdef void c_reverse_complement(
         sequence[0] = table[<ssize_t> sequence[0]]
 
 
+cdef inline void v_reverse_complement(StringView* view, bint dna) noexcept:
+    """Handle reverse complement in place on StringView directly."""
+    if dna:
+        c_reverse_complement(view[0].ptr, view[0].size, &DNA[0])
+    else:
+        c_reverse_complement(view[0].ptr, view[0].size, &RNA[0])
+
+
 cpdef str reverse_complement(str sequence, bint dna = True):
     """Reverse complement a nucleotide sequence.
 
     Args:
-        sequence (str): Nucelotide sequence string.
+        sequence (str): Nucleotide sequence string.
         dna (bool): Sequence is DNA, else RNA.
 
     Returns:
@@ -180,16 +192,12 @@ cpdef str reverse_complement(str sequence, bint dna = True):
 
     """
     cdef StringView view = str_to_view(sequence)
-
-    if dna:
-        c_reverse_complement(view.ptr, view.size, DNA)
-    else:
-        c_reverse_complement(view.ptr, view.size, RNA)
+    v_reverse_complement(&view, dna)
 
     return to_str(view)
 
 
-cdef void _center(
+cdef inline void _center(
     char* seq,
     char* comp,
     Py_ssize_t* left,
@@ -202,6 +210,21 @@ cdef void _center(
         left[0] -= 1
         right[0] += 1
     left[0] += 1
+
+
+cdef inline void _update_bounds(
+    Py_ssize_t left,
+    Py_ssize_t right,
+    Py_ssize_t* current,
+    Py_ssize_t* length,
+    Py_ssize_t* start,
+    Py_ssize_t* end
+) noexcept:
+    current[0] = right - left
+    if current[0] > length[0]:
+        length[0] = current[0]
+        start[0] = left
+        end[0] = right
 
 
 cpdef str palindrome(str sequence, bint dna = True):
@@ -233,18 +256,14 @@ cpdef str palindrome(str sequence, bint dna = True):
         StringView com = str_to_view(sequence)
         Py_ssize_t i, left, right, current, length = 0, start = 0, end = 0
 
-    v_complement(com, dna)
+    v_complement(&com, dna)
 
     for i in range(seq.size - 1):
         # Check even length palindromes first (more common for ATGC based sequences)
         left = i
         right = i + 1
         _center(seq.ptr, com.ptr, &left, &right, seq.size)
-        current = right - left
-        if current > length:
-            length = current
-            start = left
-            end = right
+        _update_bounds(left, right, &current, &length, &start, &end)
 
         # Only check odd length palindromes in case of (center) degenerate bases
         if seq.ptr[i] != com.ptr[i]:
@@ -253,11 +272,7 @@ cpdef str palindrome(str sequence, bint dna = True):
         left = i - 1
         right = i + 1
         _center(seq.ptr, com.ptr, &left, &right, seq.size)
-        current = right - left
-        if current > length:
-            length = current
-            start = left
-            end = right
+        _update_bounds(left, right, &current, &length, &start, &end)
 
     free(seq.ptr)
     free(com.ptr)
@@ -300,7 +315,12 @@ cpdef int stretch(str sequence):
     return longest
 
 
-cdef inline bint _compare(char* p, char* q, Py_ssize_t start, Py_ssize_t end):
+cdef inline bint _compare(
+    char* p,
+    char* q,
+    Py_ssize_t start,
+    Py_ssize_t end
+) noexcept:
     """Awkward slice comparison between two different size chars."""
     cdef:
         Py_ssize_t j, count = 0
@@ -314,7 +334,7 @@ cdef inline bint _compare(char* p, char* q, Py_ssize_t start, Py_ssize_t end):
 
 
 cdef inline void _assign(char* src, char* dest, Py_ssize_t start, Py_ssize_t end):
-    """Overcome assigning a substring slice to another char variable."""
+    """Overcome slice assignment between two char variables of different sizes."""
     cdef:
         Py_ssize_t j, count = 0
 

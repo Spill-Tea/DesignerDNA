@@ -27,8 +27,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# pylint: disable=W0613
-
 """Cythonized oligonucleotide functions."""
 
 def reverse(sequence: str) -> str:
@@ -70,7 +68,7 @@ def reverse_complement(sequence: str, dna: bool = ...) -> str:
     """Reverse complement a nucleotide sequence.
 
     Args:
-        sequence (str): Nucelotide sequence string.
+        sequence (str): Nucleotide sequence string.
         dna (bool): Sequence is DNA, else RNA.
 
     Returns:

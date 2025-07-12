@@ -66,6 +66,14 @@ extensions.append(
         # extra_link_args=[openmp],
     )
 )
+extensions.append(
+    Extension(
+        "designer_dna._oligonucleotides",
+        ["src/designer_dna/_oligonucleotides.pyx"],
+        include_dirs=["src/designer_dna/headers"],
+        language="c++",
+    )
+)
 
 
 # Add cython directive to specify python version target
