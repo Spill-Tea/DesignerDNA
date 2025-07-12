@@ -75,6 +75,11 @@ force_uppercase_builtins = true
 
 [tool.pylint.main]
 # extension-pkg-whitelist = []
+extension-pkg-allow-list = [
+  "designer_dna._oligonucleotides",
+  "designer_dna._oligos"
+]
+
 ignore = ["dist", "build"]
 fail-under = 9.0
 jobs = 0
