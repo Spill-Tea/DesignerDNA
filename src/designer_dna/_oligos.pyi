@@ -68,7 +68,7 @@ def reverse_complement(sequence: str, dna: bool = ...) -> str:
     """Reverse complement a nucleotide sequence.
 
     Args:
-        sequence (str): Nucelotide sequence string.
+        sequence (str): Nucleotide sequence string.
         dna (bool): Sequence is DNA, else RNA.
 
     Returns:
