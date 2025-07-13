@@ -27,55 +27,31 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Sphinx configuration file."""
+"""Common shared utility functions."""
 
-import os
-import sys
+from typing import Iterator
 
-from sphinx.application import Sphinx
-from sphinx.highlighting import lexer_classes
+from pygments.token import _TokenType, string_to_tokentype
 
 
-sys.path.insert(0, os.path.abspath("../src/"))
-sys.path.append(os.path.abspath("./_ext"))  # Required for custom extensions
+def get_bracket_level(n: int) -> _TokenType:
+    """Retrieve the bracket depth level token."""
+    name: str = f"Punctuation.Level{n}"
 
-project = "DesignerDNA"
-copyright = "2025, Jason C Del Rio (Spill-Tea)"
-author = "Jason C Del Rio (Spill-Tea)"
-release = "v0.0.1"
-
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
-
-extensions = [
-    "sphinx.ext.duration",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
-    "sphinx.ext.napoleon",
-]
-autosummary_generate = True  # Turn on sphinx.ext.autosummary
-napoleon_google_docstring = True
-
-templates_path = ["_templates"]
-exclude_patterns = []
+    return string_to_tokentype(name)
 
 
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
-html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static"]
-html_css_files = ["custom.css"]
-pygments_style = "styles.VSCodeDarkPlus"
+def nbrackets(n: int) -> Iterator[_TokenType]:
+    """Dynamically generate tokentype to identify a variable number of brackets."""
+    for j in range(n):
+        yield get_bracket_level(j)
 
 
-def setup(app: Sphinx) -> None:
-    """Custom sphinx application startup setup."""
-    from lexer import CustomPythonLexer
+def dynamic_brackets(colors: list[str]) -> list[tuple[_TokenType, str]]:
+    """Dynamically generate bracket color options from a list of colors."""
+    return [(key, colors[idx]) for idx, key in enumerate(nbrackets(len(colors)))]
 
-    app.add_lexer("python", CustomPythonLexer)
-    assert "python" in lexer_classes, "python language not found in registry"
-    assert lexer_classes["python"] == CustomPythonLexer, (
-        "custom Lexer not found in registry."
-    )
+
+def get_brackets(colors: list[str]) -> dict[_TokenType, str]:
+    """Get brackets in dictionary form."""
+    return dict(dynamic_brackets(colors))
