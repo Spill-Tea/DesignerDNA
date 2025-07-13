@@ -369,7 +369,7 @@ cpdef int nrepeats(str sequence, int n):
         StringView view = str_to_view(sequence)
         Py_ssize_t t = <Py_ssize_t> n
         Py_ssize_t v = view.size // t
-        Py_ssize_t i, j, k
+        Py_ssize_t j, k
         int current, max_val = 0
         char* previous = <char *> malloc((t + 1) * sizeof(char))
 
