@@ -30,22 +30,36 @@
 # distutils: language = c++
 
 """Oligonucleotide functions with the help of C++."""
-from narray cimport NumericArray
-from designer_dna._oligos cimport v_complement
-from common cimport StringView, str_to_view
-from libc.stdlib cimport free
 
+from libc.stdlib cimport free
 
 cdef extern from "Python.h":
     str PyUnicode_Join(str, str)
 
+from common cimport StringView, str_to_view
+from narray cimport NumericArray
+
+from designer_dna._oligos cimport v_complement
+
 
 cdef inline void _compute(
-    char* s,
-    char* c,
+    unsigned char* s,
+    unsigned char* c,
     NumericArray[int]* arr,
     ssize_t n,
 ):
+    """Primary computation behind manacher's algorithm.
+
+    Args:
+        s (uchar*): nucleotide sequence
+        c (uchar*): complement of nucleotide sequence
+        arr (NumericArray[int]*): an array of integers
+        n (ssize_t): length of input sequence, s.
+
+    Returns:
+        (void) relevant data saved in place to NumericArray
+
+    """
     cdef:
         ssize_t mirror, a, b, i, stemp, center = 0, radius = 0
         int temp, zero = 0
@@ -92,13 +106,10 @@ cpdef str manacher(str sequence, bint dna = True):
         dna (bool): Sequence is DNA, else RNA.
 
     Returns:
-        (str): longest palindromic substring within sequence.
+        (str) Longest palindromic substring within a sequence.
 
     Notes:
         * This is a cython/c++ implementation of the O(n) Manacher's algorithm.
-        * This algorithm is typically slower than the O(nlogn) palindrome function for
-          strings up to 2^23 characters (not benchmarked beyond this limit).
-        * This function here is primarily here for demonstration purposes.
 
     """
     cdef:
@@ -117,11 +128,12 @@ cpdef str manacher(str sequence, bint dna = True):
     free(ref.ptr)
     free(com.ptr)
 
-    # Enumerate, capturing index (center) and value of max (radius)
+    # Enumerate, capturing index (center) at value of max (radius)
     for i in range(1, ref.size - 1):
         if arr[0][i] > radius:
             radius = arr[0][i]
             center = i
     del arr
 
-    return k[center - radius + 1: center + radius: 2]
+    # By nature, a palindrome is symmetrical around center (+/- radius)
+    return sequence[(center - radius + 1) // 2 - 1: (center + radius) // 2]

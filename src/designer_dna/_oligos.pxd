@@ -40,3 +40,4 @@ cdef:
     void v_reverse_complement(StringView*, bint)
 
     int c_stretch(unsigned char*, Py_ssize_t)
+    int c_nrepeats(unsigned char*, int, int)
