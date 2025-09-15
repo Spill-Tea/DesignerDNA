@@ -30,11 +30,13 @@
 from common cimport StringView
 
 cdef:
-    void c_reverse(char*, Py_ssize_t)
+    void c_reverse(unsigned char*, Py_ssize_t)
     void v_reverse(StringView*)
 
-    void c_complement(char*, Py_ssize_t, unsigned char*)
+    void c_complement(unsigned char*, Py_ssize_t, unsigned char*)
     void v_complement(StringView*, bint)
 
-    void c_reverse_complement(char*, Py_ssize_t, unsigned char*)
+    void c_reverse_complement(unsigned char*, Py_ssize_t, unsigned char*)
     void v_reverse_complement(StringView*, bint)
+
+    int c_stretch(unsigned char*, Py_ssize_t)

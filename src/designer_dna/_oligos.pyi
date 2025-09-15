@@ -27,7 +27,19 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Cythonized oligonucleotide functions."""
+from array import array
+from typing import Any
+
+def m_reverse(sequence: array[int]) -> Any:
+    """Reverse a nucleotide sequence.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence writeable memory view.
+
+    Returns:
+        (void) Reverse a sequence in place.
+
+    """
 
 def reverse(sequence: str) -> str:
     """Reverse a nucleotide sequence.
@@ -46,6 +58,18 @@ def reverse(sequence: str) -> str:
 
     """
 
+def m_complement(sequence: array[int], dna: bool = ...) -> Any:
+    """Complement a nucleotide sequence.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence writeable memory view.
+        dna (bool): Sequence is DNA, else RNA.
+
+    Returns:
+        (void) Complement nucleotide sequence in place.
+
+    """
+
 def complement(sequence: str, dna: bool = ...) -> str:
     """Complement a nucleotide sequence.
 
@@ -61,6 +85,18 @@ def complement(sequence: str, dna: bool = ...) -> str:
 
             complement("ATGC", True) == "TACG"
             complement("ATGC", False) == "UACG"
+
+    """
+
+def m_reverse_complement(sequence: array[int], dna: bool = ...) -> Any:
+    """Reverse complement a nucleotide sequence.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence writeable memory view.
+        dna (bool): Sequence is DNA, else RNA.
+
+    Returns:
+        (void) Reverse complement nucleotide sequence in place.
 
     """
 
@@ -90,7 +126,7 @@ def palindrome(sequence: str, dna: bool = ...) -> str:
         dna (bool): Sequence is DNA, else RNA.
 
     Returns:
-        (str): longest palindromic subsequence within sequence.
+        (str) longest palindromic subsequence within sequence.
 
     Examples:
         .. code-block:: python
@@ -98,12 +134,21 @@ def palindrome(sequence: str, dna: bool = ...) -> str:
             palindrome("ATAT") == "ATAT"
             palindrome("GATATG") == "ATAT"
             palindrome("ANT") == "ANT" # Handles degenerate bases
-            palindrome("UGCA", False) == "UGCA"  # Handles RNA sequences
 
     Notes:
-        * Algorithmic time complexity O(NlogN).
         * If a sequence contains two or more palindromic substrings of equal size, the
           first leftmost palindrome is prioritized.
+
+    """
+
+def m_stretch(sequence: array[int]) -> int:
+    """Return the maximum length of a single letter (nucleotide) repeat in a string.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence writeable memory view.
+
+    Returns:
+        (int) Length of maximum run of a single letter.
 
     """
 
@@ -114,7 +159,7 @@ def stretch(sequence: str) -> int:
         sequence (str): Nucleotide sequence string.
 
     Returns:
-        (int): Length of maximum run of a single letter.
+        (int) Length of maximum run of a single letter.
 
     Examples:
         .. code-block:: python
@@ -136,7 +181,7 @@ def nrepeats(sequence: str, n: int) -> int:
         of length n characters.
 
     Raises:
-        ValueError: if value of n is less than 1.
+        ZeroDivisionError: if value of n is 0.
 
     Examples:
         .. code-block:: python

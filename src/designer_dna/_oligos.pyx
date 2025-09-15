@@ -43,24 +43,50 @@ cdef extern from "oligos.h":
     const unsigned char RNA[0x100]
 
 
-cdef inline void c_reverse(char* seq, Py_ssize_t length) noexcept:
+cdef inline void c_reverse(unsigned char* sequence, Py_ssize_t length) noexcept:
     """Reverse a C string in place.
 
     Args:
-        seq (char*): buffer sequence.
-        length (Py_ssize_t): length of seq.
+        sequence (uchar*): Buffer sequence.
+        length (Py_ssize_t): Length of sequence.
+
+    Returns:
+        (void) Reverse sequence in place.
 
     """
     cdef Py_ssize_t start, end, x = length // 2
 
     for start in range(x):
         end = length - start - 1
-        seq[start], seq[end] = seq[end], seq[start]
+        sequence[start], sequence[end] = sequence[end], sequence[start]
 
 
 cdef inline void v_reverse(StringView* view) noexcept:
-    """Handle reverse in place on StringView directly."""
+    """Handle reverse in place on StringView directly.
+
+    Args:
+        view (StringView*): Nucleotide sequence view.
+
+    Returns:
+        (void) Reverse char in place.
+
+    """
     c_reverse(view[0].ptr, view[0].size)
+
+
+cpdef void m_reverse(unsigned char[:] sequence):
+    """Reverse a nucleotide sequence.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence writeable memory view.
+
+    Returns:
+        (void) Reverse a sequence in place.
+
+    """
+    cdef Py_ssize_t length = sequence.shape[0]
+
+    c_reverse(&sequence[0], length)
 
 
 cpdef str reverse(str sequence):
@@ -83,16 +109,19 @@ cpdef str reverse(str sequence):
 
 
 cdef void c_complement(
-    char* sequence,
+    unsigned char* sequence,
     Py_ssize_t length,
     unsigned char* table
 ) noexcept:
     """Complement sequence C string in place.
 
     Args:
-        seq (char*): buffer sequence.
+        seq (uchar*): buffer sequence.
         length (Py_ssize_t): length of seq.
-        table (unsigned char*): translation table.
+        table (uchar*): translation table.
+
+    Returns:
+        (void) Complement seq in place.
 
     """
     cdef:
@@ -108,11 +137,40 @@ cdef void c_complement(
 
 
 cdef inline void v_complement(StringView* view, bint dna) noexcept:
-    """Handle complement in place on StringView directly."""
+    """Handle complement in place on StringView directly.
+
+    Args:
+        view (StringView*): Nucleotide sequence view.
+
+    Returns:
+        (void) Complement char in place.
+
+    """
     if dna:
         c_complement(view[0].ptr, view[0].size, &DNA[0])
     else:
         c_complement(view[0].ptr, view[0].size, &RNA[0])
+
+
+cpdef void m_complement(unsigned char[:] sequence, bint dna = True):
+    """Complement a nucleotide sequence.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence writeable memory view.
+        dna (bool): Sequence is DNA, else RNA.
+
+    Returns:
+        (void) Complement nucleotide sequence in place.
+
+    """
+    cdef:
+        Py_ssize_t length = sequence.shape[0]
+        unsigned char* c_string = &sequence[0]
+
+    if dna:
+        c_complement(c_string, length, &DNA[0])
+    else:
+        c_complement(c_string, length, &RNA[0])
 
 
 cpdef str complement(str sequence, bint dna = True):
@@ -139,20 +197,23 @@ cpdef str complement(str sequence, bint dna = True):
 
 
 cdef void c_reverse_complement(
-    char* sequence,
+    unsigned char* sequence,
     Py_ssize_t length,
     unsigned char* table
 ) noexcept:
     """Reverse complement sequence C string in place.
 
     Args:
-        sequence (char*): buffer pointer to nucleotide char sequence.
-        length (Py_ssize_t): length of seq.
-        table (unsigned char*): translation table.
+        sequence (uchar*): Buffer pointer to nucleotide char sequence.
+        length (Py_ssize_t): Length of sequence.
+        table (uchar*): Translation table.
+
+    Returns:
+        (void) Reverse complement sequence in place.
 
     """
     cdef:
-        char* end_ptr = sequence + (length - 1)
+        unsigned char* end_ptr = sequence + (length - 1)
 
     while end_ptr > sequence:
         sequence[0], end_ptr[0] = (
@@ -167,11 +228,40 @@ cdef void c_reverse_complement(
 
 
 cdef inline void v_reverse_complement(StringView* view, bint dna) noexcept:
-    """Handle reverse complement in place on StringView directly."""
+    """Handle reverse complement in place on StringView directly.
+
+    Args:
+        view (StringView*): Nucleotide sequence view.
+
+    Returns:
+        (void) Reverse complement char in place.
+
+    """
     if dna:
         c_reverse_complement(view[0].ptr, view[0].size, &DNA[0])
     else:
         c_reverse_complement(view[0].ptr, view[0].size, &RNA[0])
+
+
+cpdef void m_reverse_complement(unsigned char[:] sequence, bint dna = True):
+    """Reverse complement a nucleotide sequence.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence writeable memory view.
+        dna (bool): Sequence is DNA, else RNA.
+
+    Returns:
+        (void) Reverse complement nucleotide sequence in place.
+
+    """
+    cdef:
+        Py_ssize_t length = sequence.shape[0]
+        unsigned char* c_string = &sequence[0]
+
+    if dna:
+        c_reverse_complement(c_string, length, &DNA[0])
+    else:
+        c_reverse_complement(c_string, length, &RNA[0])
 
 
 cpdef str reverse_complement(str sequence, bint dna = True):
@@ -198,8 +288,8 @@ cpdef str reverse_complement(str sequence, bint dna = True):
 
 
 cdef inline void _center(
-    char* seq,
-    char* comp,
+    unsigned char* seq,
+    unsigned char* comp,
     Py_ssize_t* left,
     Py_ssize_t* right,
     Py_ssize_t length,
@@ -235,7 +325,7 @@ cpdef str palindrome(str sequence, bint dna = True):
         dna (bool): Sequence is DNA, else RNA.
 
     Returns:
-        (str): longest palindromic subsequence within sequence.
+        (str) longest palindromic subsequence within sequence.
 
     Examples:
         .. code-block:: python
@@ -243,10 +333,8 @@ cpdef str palindrome(str sequence, bint dna = True):
             palindrome("ATAT") == "ATAT"
             palindrome("GATATG") == "ATAT"
             palindrome("ANT") == "ANT" # Handles degenerate bases
-            palindrome("UGCA", False) == "UGCA"  # Handles RNA sequences
 
     Notes:
-        * Algorithmic time complexity O(NlogN).
         * If a sequence contains two or more palindromic substrings of equal size, the
           first leftmost palindrome is prioritized.
 
@@ -280,6 +368,53 @@ cpdef str palindrome(str sequence, bint dna = True):
     return sequence[start: end]
 
 
+cdef inline int c_stretch(
+    unsigned char* sequence,
+    Py_ssize_t length,
+) noexcept:
+    """Compute nucleotide stretch of a single character repeat.
+
+    Args:
+        sequence (uchar*): buffer pointer to nucleotide char sequence.
+        length (Py_ssize_t): length of sequence.
+
+    Returns:
+        (int) length of longest single character repeat subsequence.
+
+    """
+    cdef:
+        unsigned char prev = sequence[0]
+        Py_ssize_t j
+        int current = 0, longest = 0
+
+    for j in range(1, length):
+        if sequence[j] == prev:
+            current += 1
+            if current > longest:
+                longest = current
+        else:
+            prev = sequence[j]
+            current = 0
+
+    return longest
+
+
+cpdef int m_stretch(unsigned char[:] sequence):
+    """Return the maximum length of a single letter (nucleotide) repeat in a string.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence writeable memory view.
+
+    Returns:
+        (int) Length of maximum run of a single letter.
+
+    """
+    cdef:
+        Py_ssize_t length = sequence.shape[0]
+
+    return c_stretch(&sequence[0], length)
+
+
 cpdef int stretch(str sequence):
     """Return the maximum length of a single letter (nucleotide) repeat in a string.
 
@@ -287,7 +422,7 @@ cpdef int stretch(str sequence):
         sequence (str): Nucleotide sequence string.
 
     Returns:
-        (int): Length of maximum run of a single letter.
+        (int) Length of maximum run of a single letter.
 
     Examples:
         .. code-block:: python
@@ -300,7 +435,7 @@ cpdef int stretch(str sequence):
         StringView view = str_to_view(sequence)
         Py_ssize_t j
         int longest = 0, current = 0
-        char prev = view.ptr[0]
+        unsigned char prev = view.ptr[0]
 
     for j in range(1, view.size):
         if view.ptr[j] == prev:
@@ -316,8 +451,8 @@ cpdef int stretch(str sequence):
 
 
 cdef inline bint _compare(
-    char* p,
-    char* q,
+    unsigned char* p,
+    unsigned char* q,
     Py_ssize_t start,
     Py_ssize_t end
 ) noexcept:
@@ -333,7 +468,12 @@ cdef inline bint _compare(
     return True
 
 
-cdef inline void _assign(char* src, char* dest, Py_ssize_t start, Py_ssize_t end):
+cdef inline void _assign(
+    unsigned char* src,
+    unsigned char* dest,
+    Py_ssize_t start,
+    Py_ssize_t end
+):
     """Overcome slice assignment between two char variables of different sizes."""
     cdef:
         Py_ssize_t j, count = 0
@@ -341,6 +481,44 @@ cdef inline void _assign(char* src, char* dest, Py_ssize_t start, Py_ssize_t end
     for j in range(start, end):
         dest[count] = src[j]
         count += 1
+
+
+cdef int c_nrepeats(unsigned char* sequence, int length, int n) noexcept:
+    """Calculate the maximum observed repeats of composite pattern size n characters.
+
+    Args:
+        sequence (str): Nucleotide sequence string.
+        n (int): Size of k-mers (composite pattern) to observe.
+
+    Returns:
+        (int) The longest tandem run of nucleotides comprised of a composite pattern
+        of length n characters.
+
+    """
+    cdef:
+        Py_ssize_t t = <Py_ssize_t> n
+        Py_ssize_t v = length // t
+        Py_ssize_t j, k
+        int current, max_val = 0
+        unsigned char* previous = <unsigned char *> malloc(
+            (t + 1) * sizeof(unsigned char)
+        )
+
+    for k in range(t):
+        _assign(sequence, previous, k, t + k)
+        current = 0
+        for j in range(1, v):
+            if _compare(sequence, previous, j * t + k, j * t + k + t):
+                current += 1
+                if current > max_val:
+                    max_val = current
+            else:
+                current = 0
+                _assign(sequence, previous, j * t + k, j * t + k + t)
+
+    free(previous)
+
+    return max_val
 
 
 cpdef int nrepeats(str sequence, int n):
@@ -355,7 +533,7 @@ cpdef int nrepeats(str sequence, int n):
         of length n characters.
 
     Raises:
-        ValueError: if value of n is less than 1.
+        ZeroDivisionError: if value of n is 0.
 
     Examples:
         .. code-block:: python
@@ -367,25 +545,9 @@ cpdef int nrepeats(str sequence, int n):
     """
     cdef:
         StringView view = str_to_view(sequence)
-        Py_ssize_t t = <Py_ssize_t> n
-        Py_ssize_t v = view.size // t
-        Py_ssize_t j, k
-        int current, max_val = 0
-        char* previous = <char *> malloc((t + 1) * sizeof(char))
+        int max_val
 
-    for k in range(t):
-        _assign(view.ptr, previous, k, t + k)
-        current = 0
-        for j in range(1, v):
-            if _compare(view.ptr, previous, j * t + k, j * t + k + t):
-                current += 1
-                if current > max_val:
-                    max_val = current
-            else:
-                current = 0
-                _assign(view.ptr, previous, j * t + k, j * t + k + t)
-
+    max_val = c_nrepeats(view.ptr, view.size, n)
     free(view.ptr)
-    free(previous)
 
     return max_val
