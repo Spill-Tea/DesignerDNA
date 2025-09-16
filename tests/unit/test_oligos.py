@@ -29,14 +29,52 @@
 
 """Unit test oligos module."""
 
-from typing import Callable
+from functools import wraps
+from typing import Any, Callable
 
 import pytest
 
-from designer_dna import oligos
+from designer_dna import _oligos, oligos
 
 
-@pytest.mark.parametrize("function", [oligos.reverse, oligos.reverse_py])
+def wrapper(f: Callable[[str], str]) -> Callable[[str], str]:
+    """Wrap a function which acts inplace on string."""
+
+    @wraps(f)
+    def inner(s: str, *args) -> str:
+        b: bytes = s.encode("utf8")
+        ba: bytearray = bytearray(b)
+        m: memoryview = memoryview(ba)
+
+        f(m, *args)
+
+        return ba.decode("utf8")
+
+    return inner
+
+
+def wrap_out(f: Callable[[str], Any]) -> Callable[[str], Any]:
+    """Wrap a function which uses a string, but provides a different output."""
+
+    @wraps(f)
+    def inner(s: str, *args) -> Any:
+        b: bytes = s.encode("utf8")
+        ba: bytearray = bytearray(b)
+        m: memoryview = memoryview(ba)
+
+        return f(m, *args)
+
+    return inner
+
+
+@pytest.mark.parametrize(
+    "function",
+    [
+        oligos.reverse,
+        wrapper(_oligos.m_reverse),
+        oligos.reverse_py,
+    ],
+)
 @pytest.mark.parametrize(
     ["seq", "expected"],
     [
@@ -67,7 +105,11 @@ for _k, _v in oligos.BASEPAIRS_DNA.items():
 
 @pytest.mark.parametrize(
     "function",
-    [oligos.complement, oligos.complement_py],
+    [
+        oligos.complement,
+        wrapper(_oligos.m_complement),
+        oligos.complement_py,
+    ],
 )
 @pytest.mark.parametrize(
     ["seq", "dna", "expected"],
@@ -108,7 +150,12 @@ def test_complement(
 
 
 @pytest.mark.parametrize(
-    "function", [oligos.reverse_complement, oligos.reverse_complement_py]
+    "function",
+    [
+        oligos.reverse_complement,
+        wrapper(_oligos.m_reverse_complement),
+        oligos.reverse_complement_py,
+    ],
 )
 @pytest.mark.parametrize(
     ["seq", "dna", "expected"],
@@ -137,7 +184,14 @@ def test_reverse_complement(
     assert result == expected, "Unexpected reverse complement."
 
 
-@pytest.mark.parametrize("function", [oligos.stretch, oligos.stretch_py])
+@pytest.mark.parametrize(
+    "function",
+    [
+        oligos.stretch,
+        wrap_out(_oligos.m_stretch),
+        oligos.stretch_py,
+    ],
+)
 @pytest.mark.parametrize(
     ["seq", "expected"],
     [
@@ -156,7 +210,14 @@ def test_stretch(seq, expected: int, function: Callable[[str], int]) -> None:
     assert result == expected, f"Unexpected stretch calculation: {result}"
 
 
-@pytest.mark.parametrize("function", [oligos.nrepeats, oligos.nrepeats_py])
+@pytest.mark.parametrize(
+    "function",
+    [
+        oligos.nrepeats,
+        wrap_out(_oligos.m_nrepeats),
+        oligos.nrepeats_py,
+    ],
+)
 @pytest.mark.parametrize(
     ["seq", "n", "expected"],
     [

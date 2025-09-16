@@ -37,12 +37,9 @@ def manacher(sequence: str, dna: bool = ...) -> str:
         dna (bool): Sequence is DNA, else RNA.
 
     Returns:
-        (str): longest palindromic substring within sequence.
+        (str) Longest palindromic substring within a sequence.
 
     Notes:
         * This is a cython/c++ implementation of the O(n) Manacher's algorithm.
-        * This algorithm is typically slower than the O(nlogn) palindrome function for
-          strings up to 2^23 characters (not benchmarked beyond this limit).
-        * This function here is primarily here for demonstration purposes.
 
     """

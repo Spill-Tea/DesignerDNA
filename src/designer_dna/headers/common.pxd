@@ -42,7 +42,7 @@ cdef extern from "Python.h":
 
 
 ctypedef struct StringView:
-    char* ptr
+    unsigned char* ptr
     Py_ssize_t size
     bint origin
 
@@ -53,7 +53,7 @@ cdef inline StringView construct(bytes s, Py_ssize_t length, bint isbytes):
         char* buffer = PyBytes_AS_STRING(s)
         StringView view
 
-    view.ptr = <char *> malloc((length + 1) * sizeof(char))
+    view.ptr = <unsigned char *> malloc((length + 1) * sizeof(unsigned char))
     memcpy(view.ptr, buffer, length + 1)
     view.ptr[length] = "\0"  # c string terminator
     view.size = length
@@ -63,7 +63,7 @@ cdef inline StringView construct(bytes s, Py_ssize_t length, bint isbytes):
 
 
 cdef inline StringView bytes_to_view(bytes b):
-    """Construct StringView from python bytes object"""
+    """Construct StringView from python bytes object."""
     cdef Py_ssize_t length = PyBytes_GET_SIZE(b)
 
     return construct(b, length, True)
@@ -80,7 +80,7 @@ cdef inline StringView str_to_view(str s):
 
 cdef inline str to_str(StringView view):
     """Convert StringView back into a python string object, safely releasing memory."""
-    cdef str obj = PyUnicode_DecodeUTF8Stateful(view.ptr, view.size, NULL, NULL)
+    cdef str obj = PyUnicode_DecodeUTF8Stateful(<char*> view.ptr, view.size, NULL, NULL)
     free(view.ptr)
 
     return obj
@@ -88,7 +88,15 @@ cdef inline str to_str(StringView view):
 
 cdef inline bytes to_bytes(StringView view):
     """Convert StringView back into a python bytes object, safely releasing memory."""
-    cdef bytes obj = PyBytes_FromStringAndSize(view.ptr, view.size)
+    cdef bytes obj = PyBytes_FromStringAndSize(<char*> view.ptr, view.size)
     free(view.ptr)
 
     return obj
+
+
+cdef inline object to_object(StringView view):
+    """Convert StringView back into a python object, safely releasing memory."""
+    if view.origin:
+        return to_bytes(view)
+
+    return to_str(view)
