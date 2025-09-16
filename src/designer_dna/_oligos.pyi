@@ -169,6 +169,22 @@ def stretch(sequence: str) -> int:
 
     """
 
+def m_nrepeats(sequence: array[int], n: int) -> int:
+    """Calculate the maximum observed repeats of composite pattern size n characters.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence string.
+        n (int): Size of k-mers (composite pattern) to observe.
+
+    Returns:
+        (int) The longest tandem run of nucleotides comprised of a composite pattern
+        of length n characters.
+
+    Raises:
+        ZeroDivisionError: if value of n is 0.
+
+    """
+
 def nrepeats(sequence: str, n: int) -> int:
     """Calculate the maximum observed repeats of composite pattern size n characters.
 

@@ -30,6 +30,7 @@
 # cython: boundscheck=False, wraparound=False, nonecheck=False
 """Cythonized oligonucleotide functions."""
 
+from libc.string cimport memcpy
 from libc.stdlib cimport free, malloc
 
 from common cimport (
@@ -108,7 +109,7 @@ cpdef str reverse(str sequence):
     return sequence[::-1]
 
 
-cdef void c_complement(
+cdef inline void _c_complement(
     unsigned char* sequence,
     Py_ssize_t length,
     unsigned char* table
@@ -116,8 +117,8 @@ cdef void c_complement(
     """Complement sequence C string in place.
 
     Args:
-        seq (uchar*): buffer sequence.
-        length (Py_ssize_t): length of seq.
+        sequence (uchar*):  Nucleotide sequence pointer.
+        length (Py_ssize_t): Length of seq.
         table (uchar*): translation table.
 
     Returns:
@@ -136,6 +137,28 @@ cdef void c_complement(
         sequence[idx] = table[<ssize_t> sequence[idx]]
 
 
+cdef void c_complement(
+    unsigned char* sequence,
+    Py_ssize_t length,
+    bint dna
+) noexcept:
+    """Complement sequence C string in place.
+
+    Args:
+        sequence (uchar*):  Nucleotide sequence pointer.
+        length (Py_ssize_t): Length of seq.
+        dna (bint): DNA else RNA.
+
+    Returns:
+        (void) Complement sequence in place.
+
+    """
+    if dna:
+        _c_complement(sequence, length, &DNA[0])
+    else:
+        _c_complement(sequence, length, &RNA[0])
+
+
 cdef inline void v_complement(StringView* view, bint dna) noexcept:
     """Handle complement in place on StringView directly.
 
@@ -146,10 +169,7 @@ cdef inline void v_complement(StringView* view, bint dna) noexcept:
         (void) Complement char in place.
 
     """
-    if dna:
-        c_complement(view[0].ptr, view[0].size, &DNA[0])
-    else:
-        c_complement(view[0].ptr, view[0].size, &RNA[0])
+    c_complement(view[0].ptr, view[0].size, dna)
 
 
 cpdef void m_complement(unsigned char[:] sequence, bint dna = True):
@@ -167,10 +187,7 @@ cpdef void m_complement(unsigned char[:] sequence, bint dna = True):
         Py_ssize_t length = sequence.shape[0]
         unsigned char* c_string = &sequence[0]
 
-    if dna:
-        c_complement(c_string, length, &DNA[0])
-    else:
-        c_complement(c_string, length, &RNA[0])
+    c_complement(c_string, length, dna)
 
 
 cpdef str complement(str sequence, bint dna = True):
@@ -196,7 +213,7 @@ cpdef str complement(str sequence, bint dna = True):
     return to_str(view)
 
 
-cdef void c_reverse_complement(
+cdef inline void _c_reverse_complement(
     unsigned char* sequence,
     Py_ssize_t length,
     unsigned char* table
@@ -204,7 +221,7 @@ cdef void c_reverse_complement(
     """Reverse complement sequence C string in place.
 
     Args:
-        sequence (uchar*): Buffer pointer to nucleotide char sequence.
+        sequence (uchar*): Nucleotide sequence pointer.
         length (Py_ssize_t): Length of sequence.
         table (uchar*): Translation table.
 
@@ -227,6 +244,28 @@ cdef void c_reverse_complement(
         sequence[0] = table[<ssize_t> sequence[0]]
 
 
+cdef void c_reverse_complement(
+    unsigned char* sequence,
+    Py_ssize_t length,
+    bint dna
+) noexcept:
+    """Reverse complement sequence C string in place.
+
+    Args:
+        sequence (uchar*): Nucleotide sequence pointer.
+        length (Py_ssize_t): Length of seq.
+        dna (bint): Sequence is DNA, else RNA.
+
+    Returns:
+        (void) Complement seq in place.
+
+    """
+    if dna:
+        _c_reverse_complement(sequence, length, &DNA[0])
+    else:
+        _c_reverse_complement(sequence, length, &RNA[0])
+
+
 cdef inline void v_reverse_complement(StringView* view, bint dna) noexcept:
     """Handle reverse complement in place on StringView directly.
 
@@ -237,10 +276,7 @@ cdef inline void v_reverse_complement(StringView* view, bint dna) noexcept:
         (void) Reverse complement char in place.
 
     """
-    if dna:
-        c_reverse_complement(view[0].ptr, view[0].size, &DNA[0])
-    else:
-        c_reverse_complement(view[0].ptr, view[0].size, &RNA[0])
+    c_reverse_complement(view[0].ptr, view[0].size, dna)
 
 
 cpdef void m_reverse_complement(unsigned char[:] sequence, bint dna = True):
@@ -256,12 +292,8 @@ cpdef void m_reverse_complement(unsigned char[:] sequence, bint dna = True):
     """
     cdef:
         Py_ssize_t length = sequence.shape[0]
-        unsigned char* c_string = &sequence[0]
 
-    if dna:
-        c_reverse_complement(c_string, length, &DNA[0])
-    else:
-        c_reverse_complement(c_string, length, &RNA[0])
+    c_reverse_complement(&sequence[0], length, dna)
 
 
 cpdef str reverse_complement(str sequence, bint dna = True):
@@ -317,6 +349,40 @@ cdef inline void _update_bounds(
         end[0] = right
 
 
+cdef inline (Py_ssize_t, Py_ssize_t) c_palindrome(
+    unsigned char* seq,
+    Py_ssize_t size,
+    bint dna
+) noexcept:
+    cdef:
+        unsigned char* com = <unsigned char*> malloc((size + 1) * sizeof(unsigned char))
+        Py_ssize_t i, left, right, current, length = 0, start = 0, end = 0
+
+    memcpy(com, seq, size)
+    com[size] = "\0"
+    c_complement(com, size, dna)
+
+    for i in range(size - 1):
+        # Check even length palindromes first (more common for ATGC based sequences)
+        left = i
+        right = i + 1
+        _center(seq, com, &left, &right, size)
+        _update_bounds(left, right, &current, &length, &start, &end)
+
+        # Only check odd length palindromes in case of (center) degenerate bases
+        if seq[i] != com[i]:
+            continue
+
+        left = i - 1
+        right = i + 1
+        _center(seq, com, &left, &right, size)
+        _update_bounds(left, right, &current, &length, &start, &end)
+
+    free(com)
+
+    return start, end
+
+
 cpdef str palindrome(str sequence, bint dna = True):
     """Find the longest palindromic substring within a nucleotide sequence.
 
@@ -341,29 +407,10 @@ cpdef str palindrome(str sequence, bint dna = True):
     """
     cdef:
         StringView seq = str_to_view(sequence)
-        StringView com = str_to_view(sequence)
-        Py_ssize_t i, left, right, current, length = 0, start = 0, end = 0
+        Py_ssize_t start, end
 
-    v_complement(&com, dna)
-
-    for i in range(seq.size - 1):
-        # Check even length palindromes first (more common for ATGC based sequences)
-        left = i
-        right = i + 1
-        _center(seq.ptr, com.ptr, &left, &right, seq.size)
-        _update_bounds(left, right, &current, &length, &start, &end)
-
-        # Only check odd length palindromes in case of (center) degenerate bases
-        if seq.ptr[i] != com.ptr[i]:
-            continue
-
-        left = i - 1
-        right = i + 1
-        _center(seq.ptr, com.ptr, &left, &right, seq.size)
-        _update_bounds(left, right, &current, &length, &start, &end)
-
+    start, end = c_palindrome(seq.ptr, seq.size, dna)
     free(seq.ptr)
-    free(com.ptr)
 
     return sequence[start: end]
 
@@ -519,6 +566,24 @@ cdef int c_nrepeats(unsigned char* sequence, int length, int n) noexcept:
     free(previous)
 
     return max_val
+
+
+cpdef int m_nrepeats(unsigned char[:] sequence, int n):
+    """Calculate the maximum observed repeats of composite pattern size n characters.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence string.
+        n (int): Size of k-mers (composite pattern) to observe.
+
+    Returns:
+        (int) The longest tandem run of nucleotides comprised of a composite pattern
+        of length n characters.
+
+    Raises:
+        ZeroDivisionError: if value of n is 0.
+
+    """
+    return c_nrepeats(&sequence[0], sequence.shape[0], n)
 
 
 cpdef int nrepeats(str sequence, int n):

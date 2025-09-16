@@ -210,7 +210,14 @@ def test_stretch(seq, expected: int, function: Callable[[str], int]) -> None:
     assert result == expected, f"Unexpected stretch calculation: {result}"
 
 
-@pytest.mark.parametrize("function", [oligos.nrepeats, oligos.nrepeats_py])
+@pytest.mark.parametrize(
+    "function",
+    [
+        oligos.nrepeats,
+        wrap_out(_oligos.m_nrepeats),
+        oligos.nrepeats_py,
+    ],
+)
 @pytest.mark.parametrize(
     ["seq", "n", "expected"],
     [
