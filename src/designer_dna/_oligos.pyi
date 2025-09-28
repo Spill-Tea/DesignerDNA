@@ -118,6 +118,19 @@ def reverse_complement(sequence: str, dna: bool = ...) -> str:
 
     """
 
+def m_palindrome(sequence: array[int], dna: bool = ...) -> tuple[int, int]:
+    """Find the longest palindromic substring within a nucleotide sequence.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence writeable memory view.
+        dna (bool): Sequence is DNA, else RNA.
+
+    Returns:
+        (int, int) start and end indices denoting the longest found
+        palindromic subsequence within sequence.
+
+    """
+
 def palindrome(sequence: str, dna: bool = ...) -> str:
     """Find the longest palindromic substring within a nucleotide sequence.
 
