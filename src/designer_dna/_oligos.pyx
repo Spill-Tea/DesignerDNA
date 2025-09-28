@@ -185,9 +185,8 @@ cpdef void m_complement(unsigned char[:] sequence, bint dna = True):
     """
     cdef:
         Py_ssize_t length = sequence.shape[0]
-        unsigned char* c_string = &sequence[0]
 
-    c_complement(c_string, length, dna)
+    c_complement(&sequence[0], length, dna)
 
 
 cpdef str complement(str sequence, bint dna = True):
@@ -253,11 +252,11 @@ cdef void c_reverse_complement(
 
     Args:
         sequence (uchar*): Nucleotide sequence pointer.
-        length (Py_ssize_t): Length of seq.
+        length (Py_ssize_t): Length of sequence.
         dna (bint): Sequence is DNA, else RNA.
 
     Returns:
-        (void) Complement seq in place.
+        (void) Complement sequence in place.
 
     """
     if dna:
@@ -354,6 +353,18 @@ cdef inline (Py_ssize_t, Py_ssize_t) c_palindrome(
     Py_ssize_t size,
     bint dna
 ) noexcept:
+    """Find the longest palindromic substring within a nucleotide sequence.
+
+    Args:
+        seq (uchar*): Nucleotide sequence pointer.
+        size (Py_ssize_t): Length of seq.
+        dna (bint): Sequence is DNA, else RNA.
+
+    Returns:
+        (tuple[Py_ssize_t, Py_ssize_t]) longest palindromic subsequence within sequence,
+        described by start (inclusive) and end (exclusive) index.
+
+    """
     cdef:
         unsigned char* com = <unsigned char*> malloc((size + 1) * sizeof(unsigned char))
         Py_ssize_t i, left, right, current, length = 0, start = 0, end = 0
@@ -379,6 +390,30 @@ cdef inline (Py_ssize_t, Py_ssize_t) c_palindrome(
         _update_bounds(left, right, &current, &length, &start, &end)
 
     free(com)
+
+    return start, end
+
+
+cpdef (int, int) m_palindrome(
+    unsigned char[:] sequence,
+    bint dna = True
+):
+    """Find the longest palindromic substring within a nucleotide sequence.
+
+    Args:
+        sequence (uchar[]): Nucleotide sequence writeable memory view.
+        dna (bool): Sequence is DNA, else RNA.
+
+    Returns:
+        (int, int) start and end indices denoting the longest found
+        palindromic subsequence within sequence.
+
+    """
+    cdef:
+        int start, end
+        Py_ssize_t length = sequence.shape[0]
+
+    start, end = c_palindrome(&sequence[0], length, dna)
 
     return start, end
 
@@ -479,19 +514,10 @@ cpdef int stretch(str sequence):
 
     """
     cdef:
+        int longest
         StringView view = str_to_view(sequence)
-        Py_ssize_t j
-        int longest = 0, current = 0
-        unsigned char prev = view.ptr[0]
 
-    for j in range(1, view.size):
-        if view.ptr[j] == prev:
-            current += 1
-            if current > longest:
-                longest = current
-        else:
-            current = 0
-            prev = view.ptr[j]
+    longest = c_stretch(view.ptr, view.size)
     free(view.ptr)
 
     return longest
@@ -530,7 +556,11 @@ cdef inline void _assign(
         count += 1
 
 
-cdef int c_nrepeats(unsigned char* sequence, int length, int n) noexcept:
+cdef inline int c_nrepeats(
+    unsigned char* sequence,
+    int length,
+    int n
+) noexcept:
     """Calculate the maximum observed repeats of composite pattern size n characters.
 
     Args:
