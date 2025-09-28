@@ -67,6 +67,21 @@ def wrap_out(f: Callable[[str], Any]) -> Callable[[str], Any]:
     return inner
 
 
+def wrap_slice(f: Callable[[str], Any]) -> Callable[[str], str]:
+    """Wrap a function which uses a string, and returns a substring output."""
+
+    @wraps(f)
+    def inner(s: str, *args) -> str:
+        b: bytes = s.encode("utf8")
+        ba: bytearray = bytearray(b)
+        m: memoryview = memoryview(ba)
+        a, b = f(m, *args)
+
+        return s[a:b]
+
+    return inner
+
+
 @pytest.mark.parametrize(
     "function",
     [
@@ -202,6 +217,8 @@ def test_reverse_complement(
         ("AAT", 1),
         ("ATGC", 0),
         ("AAAAACCCCCCGGGGGGG", 6),
+        ("A" * 10 + "T", 9),
+        ("T" + "A" * 10, 9),
     ],
 )
 def test_stretch(seq, expected: int, function: Callable[[str], int]) -> None:
@@ -250,6 +267,7 @@ def test_nrepeats(
     "function",
     [
         oligos.palindrome,
+        wrap_slice(_oligos.m_palindrome),
         oligos.palindrome_py,
         oligos.manacher,
     ],
