@@ -284,11 +284,12 @@ def nrepeats_py(sequence: str, n: int) -> int:
 
     """
     max_val: int = 0
+    length: int = len(sequence)
 
     for k in range(n):
         previous: str = sequence[k : n + k]
         current: int = 0
-        for j in range(n, len(sequence), n):
+        for j in range(n, length, n):
             phase: str = sequence[j + k : j + k + n]
             if phase == previous:
                 current += 1
