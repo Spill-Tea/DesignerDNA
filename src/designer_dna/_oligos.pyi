@@ -28,9 +28,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from array import array
-from typing import Any
 
-def m_reverse(sequence: array[int]) -> Any:
+def m_reverse(sequence: array[int]) -> None:
     """Reverse a nucleotide sequence.
 
     Args:
@@ -58,7 +57,7 @@ def reverse(sequence: str) -> str:
 
     """
 
-def m_complement(sequence: array[int], dna: bool = ...) -> Any:
+def m_complement(sequence: array[int], dna: bool = ...) -> None:
     """Complement a nucleotide sequence.
 
     Args:
@@ -88,7 +87,7 @@ def complement(sequence: str, dna: bool = ...) -> str:
 
     """
 
-def m_reverse_complement(sequence: array[int], dna: bool = ...) -> Any:
+def m_reverse_complement(sequence: array[int], dna: bool = ...) -> None:
     """Reverse complement a nucleotide sequence.
 
     Args:
