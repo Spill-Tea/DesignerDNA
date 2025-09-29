@@ -283,19 +283,20 @@ def nrepeats_py(sequence: str, n: int) -> int:
             nrepeats_py("ACAACAACA", 3) == 2  #  True
 
     """
-    previous: list[str] = [sequence[i : n + i] for i in range(n)]
-    current: list[int] = [0] * n
     max_val: int = 0
+    length: int = len(sequence)
 
-    for j in range(n, len(sequence), n):
-        for k in range(n):
+    for k in range(n):
+        previous: str = sequence[k : n + k]
+        current: int = 0
+        for j in range(n, length, n):
             phase: str = sequence[j + k : j + k + n]
-            if phase == previous[k]:
-                current[k] += 1
-                if current[k] > max_val:
-                    max_val = current[k]
+            if phase == previous:
+                current += 1
+                if current > max_val:
+                    max_val = current
             else:
-                current[k] = 0
-                previous[k] = phase
+                current = 0
+                previous = phase
 
     return max_val
