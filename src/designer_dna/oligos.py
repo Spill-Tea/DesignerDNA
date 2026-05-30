@@ -32,6 +32,7 @@
 from ._oligonucleotides import manacher
 from ._oligos import (
     complement,
+    gc,
     nrepeats,
     palindrome,
     reverse,
@@ -43,6 +44,7 @@ from ._oligos import (
 __all__ = [
     "complement",
     "complement_py",
+    "gc",
     "manacher",
     "nrepeats",
     "nrepeats_py",
@@ -300,3 +302,10 @@ def nrepeats_py(sequence: str, n: int) -> int:
                 previous = phase
 
     return max_val
+
+
+def gc_py(sequence: str) -> float:
+    """Calculate gc content of a nucleotide sequence."""
+    length: float = float(len(sequence))
+
+    return length and (sequence.count("G") + sequence.count("C")) / length

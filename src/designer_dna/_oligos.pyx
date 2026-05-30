@@ -33,11 +33,11 @@
 from libc.string cimport memcpy
 from libc.stdlib cimport free, malloc
 
-from common cimport (
-    StringView,
-    str_to_view,
-    to_str
-)
+from common cimport StringView, str_to_view, to_str
+
+cdef extern from "Python.h":
+    Py_ssize_t PyUnicode_GET_LENGTH(object)
+    int PyUnicode_Count(object, object, Py_ssize_t, Py_ssize_t)
 
 cdef extern from "oligos.h":
     const unsigned char DNA[0x100]
@@ -109,6 +109,34 @@ cpdef str reverse(str sequence):
     return sequence[::-1]
 
 
+cpdef float gc(str sequence) noexcept:
+    """Compute the gc content of a nucleotide sequence.
+
+    Args:
+        sequence (str): Nucleotide sequence string.
+
+    Returns:
+        (float) gc sequence fraction.
+
+    Examples:
+        .. code-block:: python
+
+            gc("ATATAT") == 0.0
+            gc("GGAA") == 0.5
+
+    """
+    cdef int length = <int> PyUnicode_GET_LENGTH(sequence)
+
+    if length == 0:
+        return 0.0
+
+    cdef:
+        int g = PyUnicode_Count(sequence, "G", 0, length)
+        int c = PyUnicode_Count(sequence, "C", 0, length)
+
+    return (g + c) / length
+
+
 cdef inline void _c_complement(
     unsigned char* sequence,
     Py_ssize_t length,
@@ -153,10 +181,7 @@ cdef void c_complement(
         (void) Complement sequence in place.
 
     """
-    if dna:
-        _c_complement(sequence, length, &DNA[0])
-    else:
-        _c_complement(sequence, length, &RNA[0])
+    _c_complement(sequence, length, &DNA[0] if dna else &RNA[0])
 
 
 cdef inline void v_complement(StringView* view, bint dna) noexcept:
@@ -259,10 +284,7 @@ cdef void c_reverse_complement(
         (void) Complement sequence in place.
 
     """
-    if dna:
-        _c_reverse_complement(sequence, length, &DNA[0])
-    else:
-        _c_reverse_complement(sequence, length, &RNA[0])
+    _c_reverse_complement(sequence, length, &DNA[0] if dna else &RNA[0])
 
 
 cdef inline void v_reverse_complement(StringView* view, bint dna) noexcept:
