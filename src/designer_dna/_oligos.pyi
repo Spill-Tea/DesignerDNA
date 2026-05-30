@@ -57,6 +57,23 @@ def reverse(sequence: str) -> str:
 
     """
 
+def gc(sequence: str) -> float:
+    """Compute the gc content of a nucleotide sequence.
+
+    Args:
+        sequence (str): Nucleotide sequence string.
+
+    Returns:
+        (float) gc sequence fraction.
+
+    Examples:
+        .. code-block:: python
+
+            gc("ATATAT") == 0.0
+            gc("GGAA") == 0.5
+
+    """
+
 def m_complement(sequence: array[int], dna: bool = ...) -> None:
     """Complement a nucleotide sequence.
 

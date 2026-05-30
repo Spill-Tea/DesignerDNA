@@ -308,3 +308,26 @@ def test_palindromes(
     assert result == expected, f"Unexpected palindrome: {result}"
     if result:
         assert result == oligos.reverse_complement(result)
+
+
+@pytest.mark.parametrize(
+    "function",
+    [
+        _oligos.gc,
+        oligos.gc_py,
+    ],
+)
+@pytest.mark.parametrize(
+    ["seq", "expected"],
+    [
+        ("", 0.0),
+        ("A", 0.0),
+        ("G", 1.0),
+        ("GC", 1.0),
+        ("ATGC", 0.5),
+    ],
+)
+def test_gc(seq: str, expected: float, function: Callable[[str], float]) -> None:
+    """Confirm gc content is calculated correctly."""
+    result = function(seq)
+    assert result == expected, "Unexpected GC content calculation result."
