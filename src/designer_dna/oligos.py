@@ -45,6 +45,7 @@ __all__ = [
     "complement",
     "complement_py",
     "gc",
+    "gc_py",
     "manacher",
     "nrepeats",
     "nrepeats_py",
@@ -268,7 +269,7 @@ def nrepeats_py(sequence: str, n: int) -> int:
     """Calculate the longest substring of n repeating characters.
 
     Args:
-        sequence (str): Nucleotide string or Series of string
+        sequence (str): Nucleotide sequence string.
         n (int): stretch of k-mer to observe
 
     Returns:
@@ -305,7 +306,15 @@ def nrepeats_py(sequence: str, n: int) -> int:
 
 
 def gc_py(sequence: str) -> float:
-    """Calculate gc content of a nucleotide sequence."""
+    """Calculate gc content of a nucleotide sequence.
+
+    Args:
+        sequence (str): Nucleotide sequence string.
+
+    Returns:
+        (float) gc fraction content of sequence.
+
+    """
     length: float = float(len(sequence))
 
     return length and (sequence.count("G") + sequence.count("C")) / length
